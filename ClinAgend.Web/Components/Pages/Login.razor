@@ -1,0 +1,201 @@
+﻿@page "/login"
+@layout EmptyLayout
+@inject NavigationManager navigationManager
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+<MudGrid Spacing="0" Class="login-grid" Style="height:100vh; width:100vw; margin:0; overflow:hidden;">
+
+    <MudHidden Breakpoint="Breakpoint.SmAndDown">
+        <MudItem md="7" Class="login-side-image">
+            <MudText Class="side-title">ClinAgend</MudText>
+            <MudText Class="side-subtitle">
+                Centralize consultas e agendamentos em uma plataforma simples, moderna e eficiente.
+            </MudText>
+            <div class="side-divider"></div>
+        </MudItem>
+    </MudHidden>
+
+    <MudItem xs="12" md="5" Class="form-section">
+        <MudPaper Class="login-card" Elevation="0">
+
+            <div class="login-logo-area">
+                <MudImage Src="Images/logo_clinagend.png" Alt="ClinAgend"
+                          Style="max-width:120px; display:block;" />
+                <MudText Class="login-card-title">Acessar plataforma</MudText>
+                <MudText Class="login-card-sub">Entre com suas credenciais</MudText>
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Filled"
+                          Dense="true" Class="mb-4" Style="border-radius:10px;">
+                    @message
+                </MudAlert>
+            }
+
+            <form method="post" action="/LoginRedirect">
+                <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                <input type="hidden" name="__RequestVerificationToken"
+                       value="@Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext).RequestToken" />
+
+                <MudTextField T="string" Label="Clínica" Name="clinic"
+                              Required="true" RequiredError="Informe o nome da clínica"
+                              Variant="Variant.Outlined" FullWidth="true" MaxLength="50"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Outlined.Business"
+                              Class="mb-4" />
+
+                <MudTextField T="string" Name="email" Label="E-mail"
+                              Required="true" RequiredError="E-mail é obrigatório"
+                              Variant="Variant.Outlined" FullWidth="true" MaxLength="100"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Outlined.Email"
+                              Class="mb-4" />
+
+                <PasswordField Name="password"
+                               Label="Senha"
+                               Required="true"
+                               RequiredError="Senha é obrigatória"
+                               @bind-Value="loginPassword"
+                               Class="mb-5" />
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Class="login-btn">
+                    Entrar
+                </MudButton>
+
+                <div class="d-flex justify-center mt-5">
+                    <a href="/esqueci-senha" class="forgot-link">Esqueceu sua senha?</a>
+                </div>
+            </form>
+
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>
+
+<style>
+    .login-side-image {
+        background: linear-gradient(135deg, rgba(28, 121, 188, 0.88) 0%, rgba(45, 212, 191, 0.80) 100%), url('/Images/bg-login.jpg');
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 60px 52px;
+        color: white;
+        height: 100vh;
+        box-sizing: border-box;
+    }
+
+    .login-grid .side-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: clamp(3rem, 5vw, 5rem);
+        font-weight: 600;
+        margin-bottom: 20px;
+        line-height: 1.1;
+        letter-spacing: -1px;
+    }
+
+    .login-grid .side-subtitle {
+        font-size: clamp(1.2rem, 1.5vw, 1.7rem);
+        opacity: 0.92;
+        max-width: 580px;
+        line-height: 1.7;
+        font-weight: 400;
+    }
+
+    .login-grid .side-divider {
+        width: 90px;
+        height: 6px;
+        border-radius: 999px;
+        background: white;
+        margin-top: 32px;
+    }
+
+    .login-grid .form-section {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        background-color: #F5F7FA;
+        box-sizing: border-box;
+        padding: 24px;
+    }
+
+    .login-card {
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.09);
+        border: 1px solid rgba(0,0,0,0.06);
+        width: 100%;
+        max-width: 420px;
+        padding: 40px 40px 36px;
+        box-sizing: border-box;
+    }
+
+    .login-logo-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 28px;
+    }
+
+    .login-card-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #244B6A;
+        text-align: center;
+        margin-top: 4px;
+        margin-bottom: 4px;
+    }
+
+    .login-card-sub {
+        color: #64748B;
+        font-size: 0.875rem;
+        text-align: center;
+    }
+
+    .login-btn {
+        height: 48px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: none;
+        border-radius: 10px;
+        letter-spacing: 0.3px;
+    }
+
+    .forgot-link {
+        color: #64748B;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .forgot-link:hover {
+        color: #1C79BC;
+    }
+</style>
+
+@code {
+    private string message = string.Empty;
+    private string loginPassword = string.Empty;
+    private string? returnUrl;
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(navigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("error", out var errorMsg))
+            message = errorMsg!;
+
+        if (query.TryGetValue("ReturnUrl", out var url))
+            returnUrl = url!;
+    }
+}

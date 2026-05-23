@@ -1,0 +1,93 @@
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.nav-link {
+    color: #244B6A;
+    font-size: 16px;
+    border-radius: 10px;
+    padding: 6px 12px;
+    transition: background-color 0.2s ease;
+}
+
+.nav-link a:hover, .nav-link a.active {
+       background-color: #F0F3F7;
+ }
+
+div.mud-nav-item a.mud-ripple {
+    border-radius: 8px;
+}
+
+.mud-navmenu.mud-navmenu-default .mud-nav-link.active:not(.mud-nav-link-disabled) {
+    color: #244B6A;
+}
+
+.gray-background {
+    background-color: var(--mud-palette-background-gray);
+}
+
+/* Home */
+
+.hora-row {
+    border-bottom: 1px solid #e5e5e5;
+    min-height: 100px;
+    display: flex;
+    align-items: stretch;
+}
+
+.hora-col {
+    border-right: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hora-text {
+    font-weight: 500;
+    color: #555;
+    font-size: 16px;
+}
+
+.consulta-col {
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+}
+
+.consultas-container {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-left: 10px;
+    padding-top: 10px;
+}
+
+.consulta-card {
+    min-width: 260px;
+    background: #fafafa;
+    border-radius: 10px !important;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+    cursor: pointer;
+    transition: background-color 0.2s ease !important;
+}
+
+.consulta-card:hover {
+    background-color: #f4f8fa;
+}
+
+.custom-date-select{
+    margin-top: 18px;
+}
+
+.custom-date-select .mud-select .mud-input-control-input-container {
+    background-color: white !important;
+}
+
+.custom-date-select .mud-select {
+    justify-content: center;
+}

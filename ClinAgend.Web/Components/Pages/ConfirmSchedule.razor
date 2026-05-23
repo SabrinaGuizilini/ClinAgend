@@ -1,0 +1,382 @@
+﻿@page "/confirmar-agendamento/{ConfirmationToken}"
+@layout EmptyLayout
+@inherits PageBase
+@inject IAppointmentService AppointmentService
+
+<MudContainer MaxWidth="MaxWidth.Small"
+              Class="d-flex align-center justify-center confirmation-container">
+
+    @if (loading)
+    {
+        <MudPaper Elevation="3"
+                  Class="pa-8 confirmation-card">
+
+            <MudStack AlignItems="AlignItems.Center"
+                      Spacing="2">
+
+                <MudProgressCircular Color="Color.Primary"
+                                     Indeterminate="true" />
+
+                <MudText Typo="Typo.body1">
+                    Carregando informações do agendamento...
+                </MudText>
+
+            </MudStack>
+
+        </MudPaper>
+    }
+    else if (!string.IsNullOrWhiteSpace(invalidMessage))
+    {
+        <MudPaper Elevation="3"
+                  Class="pa-8 confirmation-card">
+
+            <MudStack AlignItems="AlignItems.Center"
+                      Spacing="2">
+
+                <div class="info-icon-wrapper">
+                    <MudIcon Icon="@Icons.Material.Filled.Info"
+                             Class="info-icon" />
+                </div>
+
+                <MudText Typo="Typo.h5"
+                         Align="Align.Center"
+                         Class="fw-bold mt-4">
+
+                    Ops!
+
+                </MudText>
+
+                <MudText Typo="Typo.body1"
+                         Align="Align.Center"
+                         Class="info-description">
+
+                    @invalidMessage
+
+                </MudText>
+
+            </MudStack>
+
+        </MudPaper>
+    }
+    else if (actionCompleted)
+    {
+        <div class="success-screen">
+
+            <div class="@SuccessWrapperClass">
+                <MudIcon Icon="@SuccessIcon"
+                         Class="@SuccessIconClass" />
+            </div>
+
+            <MudText Typo="Typo.h4"
+                     Align="Align.Center"
+                     Class="fw-bold mt-6">
+
+                @SuccessTitle
+
+            </MudText>
+
+            <MudText Typo="Typo.body1"
+                     Align="Align.Center"
+                     Class="success-description mt-3">
+
+                @SuccessDescription
+
+            </MudText>
+
+        </div>
+    }
+    else
+    {
+        <MudPaper Elevation="3"
+                  Class="pa-8 confirmation-card">
+
+            <MudStack Spacing="1"
+                      Class="mb-6">
+
+                <MudText Typo="Typo.h5"
+                         Align="Align.Center"
+                         Class="fw-bold">
+
+                    Confirmar Agendamento
+
+                </MudText>
+
+                <MudText Align="Align.Center"
+                         Typo="Typo.body2"
+                         Class="mt-2 confirmation-description">
+
+                    Você possui um agendamento com
+                    Dr(a). <strong>@appointment?.Doctor?.FullName</strong>
+                    no dia <strong>@appointment?.StartTime.ToString("dd/MM/yyyy")</strong>
+                    às <strong>@appointment?.StartTime.ToString("HH:mm")</strong>.
+
+                    <br /><br />
+
+                    Deseja confirmar sua presença ou cancelar o agendamento?
+
+                </MudText>
+
+            </MudStack>
+
+            <MudStack Row="true"
+                      Spacing="2"
+                      Justify="Justify.Center"
+                      Class="mt-6 buttons-container">
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           Size="Size.Large"
+                           Disabled="@processing"
+                           OnClick="@(() => ConfirmAppointment())">
+
+                    Confirmar Agendamento
+
+                </MudButton>
+
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           Size="Size.Large"
+                           Disabled="@processing"
+                           OnClick="@(() => CancelAppointment())">
+
+                    Cancelar Agendamento
+
+                </MudButton>
+
+            </MudStack>
+
+        </MudPaper>
+    }
+
+</MudContainer>
+
+<style>
+    .confirmation-container {
+        min-height: 100vh;
+        padding: 2rem;
+    }
+
+    .confirmation-card {
+        width: 100%;
+        border-radius: 20px;
+    }
+
+    .confirmation-description {
+        line-height: 1.8;
+    }
+
+    .buttons-container {
+        flex-wrap: wrap;
+    }
+
+    .success-screen {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        animation: fade-in 0.35s ease;
+    }
+
+    .success-icon-wrapper,
+    .cancel-icon-wrapper,
+    .info-icon-wrapper {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .success-icon-wrapper {
+        background: rgba(76, 175, 80, 0.12);
+    }
+
+    .cancel-icon-wrapper {
+        background: rgba(244, 67, 54, 0.12);
+    }
+
+    .info-icon-wrapper {
+        background: rgba(33, 150, 243, 0.12);
+    }
+
+    .success-icon {
+        font-size: 70px !important;
+        color: #4CAF50;
+    }
+
+    .cancel-icon {
+        font-size: 70px !important;
+        color: #F44336;
+    }
+
+    .info-icon {
+        font-size: 70px !important;
+        color: #2196F3;
+    }
+
+    .success-description,
+    .info-description {
+        max-width: 450px;
+        line-height: 1.7;
+        color: #6b7280;
+    }
+
+    @@keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .confirmation-container {
+            padding: 1rem;
+        }
+
+        .buttons-container {
+            flex-direction: column;
+        }
+
+            .buttons-container button {
+                width: 100%;
+            }
+    }
+</style>
+
+@code {
+
+    [Parameter]
+    public string? ConfirmationToken { get; set; }
+
+    private Appointment? appointment;
+
+    private bool loading = true;
+    private bool processing;
+    private bool actionCompleted;
+
+    private bool confirmed;
+
+    private string? invalidMessage;
+
+    private string SuccessTitle =>
+        confirmed
+            ? "Agendamento confirmado!"
+            : "Agendamento cancelado!";
+
+    private string SuccessDescription =>
+        confirmed
+            ? "Sua presença foi confirmada com sucesso!"
+            : "Seu agendamento foi cancelado com sucesso.";
+
+    private string SuccessIcon =>
+        confirmed
+            ? Icons.Material.Filled.Check
+            : Icons.Material.Filled.Close;
+
+    private string SuccessWrapperClass =>
+        confirmed
+            ? "success-icon-wrapper"
+            : "cancel-icon-wrapper";
+
+    private string SuccessIconClass =>
+        confirmed
+            ? "success-icon"
+            : "cancel-icon";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAppointment();
+    }
+
+    private async Task LoadAppointment()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ConfirmationToken))
+            {
+                invalidMessage = "Link de confirmação inválido.";
+                return;
+            }
+
+            appointment = await AppointmentService
+                .GetAppointmentByConfirmationToken(ConfirmationToken);
+
+            if (appointment == null)
+            {
+                invalidMessage = "Agendamento não encontrado.";
+                return;
+            }
+
+            if (appointment.IsConfirmationLinkUsed)
+            {
+                invalidMessage = "Este link já foi utilizado.";
+                return;
+            }
+
+            if (appointment.AppointmentStatus != AppointmentStatus.Agendado)
+            {
+                invalidMessage = "Este agendamento não está disponível para confirmação.";
+                return;
+            }
+
+            if (appointment.StartTime < DateTime.Now)
+            {
+                invalidMessage = "O horário deste agendamento já expirou.";
+                return;
+            }
+        }
+        catch
+        {
+            invalidMessage = "Ocorreu um erro ao carregar o agendamento.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task ConfirmAppointment()
+    {
+        await ChangeAppointmentStatus(AppointmentStatus.Confirmado, true);
+    }
+
+    private async Task CancelAppointment()
+    {
+        await ChangeAppointmentStatus(AppointmentStatus.Cancelado, false);
+    }
+
+    private async Task ChangeAppointmentStatus(
+        AppointmentStatus status,
+        bool isConfirmed)
+    {
+        try
+        {
+            if (appointment == null)
+                return;
+
+            processing = true;
+
+            await AppointmentService.ConfirmOrCancelAppointment(
+                appointment.AppointmentId,
+                status);
+
+            confirmed = isConfirmed;
+            actionCompleted = true;
+        }
+        catch
+        {
+            ShowError("Ocorreu um erro ao atualizar o agendamento.");
+        }
+        finally
+        {
+            processing = false;
+        }
+    }
+}

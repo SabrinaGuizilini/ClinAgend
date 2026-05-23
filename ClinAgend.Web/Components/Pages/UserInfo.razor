@@ -1,0 +1,113 @@
+﻿@page "/meus-dados"
+@inherits PageBase
+@attribute [Authorize]
+@inject ICurrentUserService CurrentUserService
+@inject IUserService UserService
+
+<MudText Typo="Typo.h5" Class="my-8 px-10">Meus Dados</MudText>
+
+<MudForm Class="px-5" @ref="_form">
+    <MudTextField T="string"
+                  @bind-Value="userName"
+                  Label="Nome"
+                  MaxLength="100"
+                  Required="true"
+                  RequiredError="Nome obrigatório!"
+                  Variant="Variant.Outlined"
+                  Style="background-color: #fafafa;"
+                  Class="mb-3" />
+
+    <MudTextField T="string"
+                  Value="@userEmail"
+                  Label="E-mail"
+                  Variant="Variant.Outlined"
+                  Disabled="true"
+                  Style="background-color: #f5f7fa;"
+                  Class="mb-3" />
+
+    <MudTextField T="string"
+                  Value="@userType"
+                  Label="Tipo de Usuário"
+                  Variant="Variant.Outlined"
+                  Disabled="true"
+                  Style="background-color: #f5f7fa;"
+                  Class="mb-10" />
+
+    <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveChanges">
+            Salvar
+        </MudButton>
+
+        <MudButton Color="Color.Tertiary"
+                   Variant="Variant.Filled"
+                   ButtonType="ButtonType.Button"
+                   OnClick="OpenChangePasswordDialog">
+            Alterar Senha
+        </MudButton>
+    </MudStack>
+</MudForm>
+
+
+@code {
+    private MudForm _form;
+    private string userId = string.Empty;
+    private string userName = string.Empty;
+    private string userEmail = string.Empty;
+    private string userType = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            userId = await CurrentUserService.GetUserIdAsync();
+            userName = await CurrentUserService.GetUserNameAsync();
+            userEmail = await CurrentUserService.GetUserEmailAsync();
+
+            var userTypeClaim = await CurrentUserService.GetUserTypeAsync();
+
+            if (Enum.TryParse<UserType>(userTypeClaim, out var type))
+                userType = type.ToDisplayText();
+            else
+                userType = "Desconhecido";
+        }
+        catch (Exception ex)
+        {
+            ShowError("Ocorreu um erro inesperado ao buscar os dados do usuário. Tente novamente mais tarde.");
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        await _form.Validate();
+
+        if (!_form.IsValid)
+            return;
+
+        try
+        {
+            var result = await UserService.UpdateUserNameAsync(userId, userName);
+
+            if (result.Success)
+                ShowSuccess("Usuário salvo com sucesso! Faça Logout e entre novamente para as mudanças serem aplicadas.");
+            else
+                ShowError(result.Message);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Ocorreu um erro inesperado ao atualizar o usuário. Tente novamente mais tarde.");
+        }
+    }
+
+    private async Task OpenChangePasswordDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "UserId", userId}
+        };
+
+        _ = await ShowDialogAsync<ChangePasswordDialog>("Alterar Senha", parameters);
+    }
+
+}

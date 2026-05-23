@@ -1,0 +1,64 @@
+﻿@page "/Error"
+@using System.Diagnostics
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="min-height: 80vh;">
+    <MudPaper Elevation="6" Class="pa-8 text-center">
+
+        <MudStack Row="true"
+                  AlignItems="AlignItems.Center"
+                  Justify="Justify.Center"
+                  Spacing="2"
+                  Class="my-2">
+
+            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline"
+                     Color="Color.Error"
+                     Size="Size.Large" />
+
+            <MudText Typo="Typo.h4" Color="Color.Error">
+                Ops! Algo deu errado
+            </MudText>
+
+        </MudStack>
+
+
+        <MudText Typo="Typo.body1" Class="mt-2">
+            Não conseguimos processar sua solicitação no momento.
+        </MudText>
+
+        @if (ShowRequestId)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
+                Código do erro: <strong>@RequestId</strong>
+            </MudAlert>
+        }
+
+        <MudDivider Class="my-6" />
+
+        <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mt-6">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Home"
+                       OnClick="BackToIndex">
+                Voltar para a página inicial
+            </MudButton>
+        </MudStack>
+
+    </MudPaper>
+</MudContainer>
+
+@code{
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+
+    private void BackToIndex()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

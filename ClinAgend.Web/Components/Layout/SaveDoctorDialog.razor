@@ -1,0 +1,224 @@
+﻿@using AutoMapper
+@inherits DialogBase
+@inject IMapper _mapper
+@inject IDoctorService DoctorService
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@doctor" OnValidSubmit="OnValidSubmit" Class="mb-4">
+            <DataAnnotationsValidator />
+
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="doctor.FullName"
+                                  Label="Nome"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => doctor.FullName)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  Required="true"
+                                  MaxLength="100"
+                                  Placeholder="Nome completo" />
+
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="doctor.CRM"
+                                  Label="CRM"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => doctor.CRM)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  Required="true"
+                                  Placeholder="Ex: 12345/SP"
+                                  MaxLength="10" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="doctor.CPF"
+                                  Label="CPF"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => doctor.CPF)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  Required="true"
+                                  Placeholder="Ex: 123.456.789-00"
+                                  Mask="@(new PatternMask("000.000.000-00"))" />
+                </MudItem>
+            </MudGrid>
+
+             <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="doctor.PhoneNumber"
+                                  Label="Celular"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => doctor.PhoneNumber)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  Required="true"
+                                  Mask="@(new PatternMask("(00)00000-0000"))"
+                                  Placeholder="Ex: (11)99999-9999" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="doctor.Specialty"
+                                  Label="Especialidade"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => doctor.Specialty)"
+                                  Immediate="true"
+                                  Required="true"
+                                  Class="mb-3"
+                                  Placeholder="Ex: Cardiologia"
+                                  MaxLength="100" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="doctor.Address"
+                                  Label="Endereço"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => doctor.Address)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  MaxLength="200"
+                                  Placeholder="Não obrigatório" />
+                </MudItem>
+            </MudGrid>
+
+            
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string"
+                               @bind-Value="doctor.WorkingDays"
+                               @bind-SelectedValues="_optionsWorkingDays"
+                               Label="Dias de Atendimento"
+                               Variant="Variant.Outlined"
+                               MultiSelection="true"
+                               Required="true"
+                               Class="mb-3"
+                               For="@(() => doctor.WorkingDays)">
+                        <MudSelectItem Value='@("Segunda")'>Segunda</MudSelectItem>
+                        <MudSelectItem Value='@("Terça")'>Terça</MudSelectItem>
+                        <MudSelectItem Value='@("Quarta")'>Quarta</MudSelectItem>
+                        <MudSelectItem Value='@("Quinta")'>Quinta</MudSelectItem>
+                        <MudSelectItem Value='@("Sexta")'>Sexta</MudSelectItem>
+                        <MudSelectItem Value='@("Sábado")'>Sábado</MudSelectItem>
+                        <MudSelectItem Value='@("Domingo")'>Domingo</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudTextField Label="Início"
+                                  @bind-Value="doctor.StartTime"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  Mask="@(new PatternMask("00:00"))"
+                                  Placeholder="HH:mm"
+                                  For="@(() => doctor.StartTime)" />
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudTextField Label="Término"
+                                  @bind-Value="doctor.EndTime"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  Mask="@(new PatternMask("00:00"))"
+                                  Placeholder="HH:mm"
+                                  For="@(() => doctor.EndTime)" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudNumericField @bind-Value="doctor.BreakBetweenAppointments"
+                                     Label="Intervalo entre atendimentos (min)"
+                                     Variant="Variant.Outlined"
+                                     Min="0"
+                                     Max="120"
+                                     Class="mb-3"
+                                     Placeholder="Não obrigatório" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudNumericField @bind-Value="doctor.MaxAppointmentsPerDay"
+                                     Label="Máx. consultas/dia"
+                                     Variant="Variant.Outlined"
+                                     Min="1"
+                                     Max="100"
+                                     Class="mb-3"
+                                     Placeholder="Não obrigatório" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudSwitch @bind-Value="doctor.IsActive"
+                               Color="Color.Primary"
+                               Label="Médico ativo"
+                               Class="my-3" />
+                </MudItem>
+            </MudGrid>
+
+            <MudStack Spacing="4" Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                <MudButton OnClick="Cancel" Color="Color.Error" Variant="Variant.Filled">
+                    Cancelar
+                </MudButton>
+
+                <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">
+                    Salvar
+                </MudButton>
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public int? DoctorId { get; set; }
+
+    [Parameter]
+    public int ClinicId { get; set; }
+
+    private DoctorDTO doctor = new();
+
+    private IEnumerable<string> _optionsWorkingDays;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DoctorId.HasValue)
+        {
+            var doctorModel = await DoctorService.GetByIdAsync(DoctorId.Value);
+            doctor = _mapper.Map<DoctorDTO>(doctorModel);
+            _optionsWorkingDays = doctorModel.WorkingDays?
+           .Split(',', StringSplitOptions.TrimEntries)
+           .ToHashSet(StringComparer.OrdinalIgnoreCase)
+           ?? new HashSet<string>();
+        }
+        else
+        {
+            doctor.ClinicId = ClinicId;
+            _optionsWorkingDays = new HashSet<string>();
+            doctor.IsActive = true;
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await ExecuteAsync(async () =>
+        {
+            var doctorModel = _mapper.Map<Doctor>(doctor);
+
+            var result = await DoctorService.SaveDoctorAsync(doctorModel);
+
+            if (!result.Success)
+            {
+                ShowError(result.Message);
+                return false;
+            }
+
+            CloseOk(doctor);
+            return true;
+        },
+        successMessage: "Médico salvo com sucesso!",
+        errorMessage: "Ocorreu um erro inesperado ao salvar o médico. Tente novamente mais tarde.");
+    }
+
+}

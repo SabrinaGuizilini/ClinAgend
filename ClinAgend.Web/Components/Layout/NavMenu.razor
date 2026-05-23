@@ -1,0 +1,57 @@
+﻿<MudNavMenu Class="mud-width-full mt-4">
+
+    <MudImage Src="Images/logo_clinagend.png"
+              Alt="ClinAgend"
+              Style="display:block; margin:10px auto; max-width:100px;" />
+
+    <AuthorizeView Policy="NotSuperAdmin">
+        <Authorized Context="homeContext">
+            <MudNavLink Class="nav-link" Href="/home"
+                        Icon="@Icons.Material.Outlined.Home">
+                Home
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Policy="DefaultAndMaster">
+        <Authorized Context="doctorAndPatientsContext">
+            <MudNavLink Class="nav-link" Href="/medicos"
+                        Icon="@Icons.Material.Outlined.MedicalServices">
+                Médicos
+            </MudNavLink>
+
+            <MudNavLink Class="nav-link" Href="/pacientes"
+                        Icon="@Icons.Material.Outlined.People">
+                Pacientes
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Policy="DoctorOnly">
+        <Authorized Context="myAgendContext">
+            <MudNavLink Class="nav-link" Href="/minha-agenda"
+                        Icon="@Icons.Material.Outlined.Event">
+                Minha Agenda
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Policy="SuperAdminOnly">
+        <Authorized Context="clinicsContext">
+            <MudNavLink Class="nav-link" Href="/clinicas"
+                        Icon="@Icons.Material.Outlined.Domain">
+                Clínicas
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Policy="MasterOnly">
+        <Authorized Context="clinicSettingsContext">
+            <MudNavLink Class="nav-link" Href="/configuracoes-clinica"
+                        Icon="@Icons.Material.Outlined.Settings">
+                Configurações
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+</MudNavMenu>

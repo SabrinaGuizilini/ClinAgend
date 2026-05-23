@@ -1,0 +1,43 @@
+# Build
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Logs
+*.log
+
+# NuGet
+*.nupkg
+packages/
+
+# Publish
+publish/
+wwwroot/dist/
+
+# EF Core local dbs
+*.mdf
+*.ldf
+
+# Secrets / environment
+.env
+.env.*
+appsettings.Development.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/

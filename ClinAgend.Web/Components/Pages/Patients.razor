@@ -1,0 +1,258 @@
+﻿@page "/pacientes"
+@inherits PageBase
+@using AutoMapper
+@attribute [Authorize(Policy = "DefaultAndMaster")]
+@inject ICurrentUserService CurrentUserService
+@inject IPatientService PatientService
+@inject IMapper Mapper
+
+<MudStack Class="mt-8 px-10" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+    <MudText Typo="Typo.h5">Pacientes</MudText>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenSavePatientDialog">
+        Novo Paciente
+    </MudButton>
+</MudStack>
+
+<MudDataGrid @ref="dataGrid"
+             T="PatientDataGridDTO"
+             ServerData="LoadPatients"
+             Hover="true"
+             Class="pa-4 ma-8"
+             Filterable="false"
+             Loading="@loading">
+
+    <ToolBarContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;" Class="my-2">
+            <MudTextField T="string"
+                      ValueChanged="@(s => OnSearch(s))"
+                      Placeholder="Buscar por nome, CPF ou celular"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Style="max-width: 370px;"
+                      Class="my-2" />
+
+            <MudRadioGroup T="EntityStatusFilter" ValueChanged="@(s => OnChangeStatusFilter(s))">
+                <MudRadio Value="EntityStatusFilter.Active" Color="Color.Primary" Dense="true">Ativos</MudRadio>
+                <MudRadio Value="EntityStatusFilter.Inactive" Color="Color.Primary" Dense="true">Inativos</MudRadio>
+                <MudRadio Value="EntityStatusFilter.All" Color="Color.Primary" Dense="true">Todos</MudRadio>
+            </MudRadioGroup>
+       </MudStack>
+    </ToolBarContent>
+
+    <Columns>
+        <PropertyColumn Property="x => x.FullName" Title="Nome Completo" HeaderStyle="font-weight: bold;" />
+        <PropertyColumn Property="x => x.FormattedPhoneNumber" Title="Celular" HeaderStyle="font-weight: bold;" />
+        <PropertyColumn Property="x => x.FormattedCPF" Title="CPF" HeaderStyle="font-weight: bold;" />
+
+        <TemplateColumn Title="Status" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Paciente">
+                <MudText Style="font-size: 14px;">
+                    @(Paciente.Item.IsActive ? "Ativo" : "Inativo")
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Editar" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Paciente">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Tertiary"
+                               Size="Size.Medium"
+                               @onclick="() => OpenEditPatientDialog(Paciente.Item.PatientId)" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Excluir" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Paciente">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Size="Size.Medium"
+                               @onclick="() => ConfirmDelete(Paciente.Item.PatientId)" />
+            </CellTemplate>
+        </TemplateColumn>
+
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager Class="pt-4" T="PatientDataGridDTO" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private int? clinicId;
+    private MudDataGrid<PatientDataGridDTO> dataGrid;
+    private bool loading;
+    private string? searchText;
+    private EntityStatusFilter statusFilter = EntityStatusFilter.Active;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            clinicId = await CurrentUserService.GetUserClinicIdAsync()
+                ?? throw new InvalidOperationException("Usuário sem clínica associada.");
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+
+    private Task OpenSavePatientDialog()
+    {
+        return OpenPatientDialogAsync(
+            "Novo Paciente",
+            new DialogParameters
+                {
+                    ["ClinicId"] = clinicId
+                });
+    }
+
+    private Task OpenEditPatientDialog(int patientId)
+    {
+        return OpenPatientDialogAsync(
+           "Editar Paciente",
+           new DialogParameters
+               {
+                   ["PatientId"] = patientId
+               });
+    }
+
+    private async Task OpenPatientDialogAsync(string title, DialogParameters parameters)
+    {
+        var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                CloseButton = true
+            };
+
+        var confirmed = await ShowDialogAsync<SavePatientDialog>(
+            title,
+            parameters,
+            options);
+
+        if (confirmed)
+            await dataGrid!.ReloadServerData();
+    }
+
+    private async Task ConfirmDelete(int patientId)
+    {
+        var parameters = new DialogParameters
+            {
+                ["ContentText"] = "Deseja realmente excluir este paciente?",
+                ["ButtonText"] = "Excluir"
+            };
+
+        var confirmed = await ShowDialogAsync<ConfirmActionDialog>(
+             "Confirmar exclusão",
+             parameters);
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            var result = await PatientService.DeletePatientAsync(patientId);
+
+            if (result.Success)
+            {
+                await dataGrid!.ReloadServerData();
+                ShowSuccess("Paciente excluído com sucesso!");
+            }
+            else
+                ShowError(result.Message);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível excluir o paciente. Tente novamente mais tarde.");
+        }
+    }
+
+    private async Task<GridData<PatientDataGridDTO>> LoadPatients(GridState<PatientDataGridDTO> state)
+    {
+        if (!clinicId.HasValue)
+            return GridDataExtensions.Empty<PatientDataGridDTO>();
+
+        try
+        {
+            loading = true;
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+
+            var (patients, total) = await PatientService.GetPaginatedAsync(
+                clinicId: clinicId.Value,
+                page: state.Page,
+                pageSize: state.PageSize,
+                statusFilter: statusFilter,
+                search: searchText,
+                sortBy: sort?.SortBy,
+                descending: sort?.Descending ?? false);
+
+            return new GridData<PatientDataGridDTO>
+                {
+                    Items = patients.Select(p =>
+                        new PatientDataGridDTO(
+                            p.PatientId,
+                            p.IsActive,
+                            p.FullName,
+                            p.CPF,
+                            p.PhoneNumber
+                        )),
+                    TotalItems = total
+                };
+
+        }
+        catch (Exception ex)
+        {
+            ShowError("Erro ao carregar os pacientes.");
+            return GridDataExtensions.Empty<PatientDataGridDTO>();
+        }
+        finally
+        {
+            loading = false;
+        }
+
+    }
+
+    private Task OnSearch(string text)
+    {
+        searchText = text;
+        return dataGrid.ReloadServerData();
+    }
+
+    private Task OnChangeStatusFilter(EntityStatusFilter status)
+    {
+        statusFilter = status;
+        return dataGrid.ReloadServerData();
+    }
+
+    private record PatientDataGridDTO(
+         int PatientId,
+         bool IsActive,
+         string FullName,
+         string CPF,
+         string PhoneNumber
+     )
+     {
+        public string FormattedCPF =>
+            string.IsNullOrWhiteSpace(CPF)
+                ? string.Empty
+                : Convert.ToUInt64(CPF).ToString(@"000\.000\.000\-00");
+
+        public string FormattedPhoneNumber
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(PhoneNumber))
+                    return string.Empty;
+
+                var digits = new string(PhoneNumber.Where(char.IsDigit).ToArray());
+
+                return digits.Length == 11
+                    ? Convert.ToUInt64(digits).ToString(@"\(00\) 00000\-0000")
+                    : PhoneNumber;
+            }
+        }
+     }
+
+}

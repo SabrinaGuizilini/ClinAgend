@@ -1,0 +1,161 @@
+﻿@inject AuthService AuthService
+@inject IDoctorService DoctorService
+@inherits DialogBase
+@using System.ComponentModel.DataAnnotations
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@user" OnValidSubmit="OnValidSubmit" Class="mb-4">
+            <DataAnnotationsValidator />
+            <MudTextField @bind-Value="user.FullName"
+                          Label="Nome"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          MaxLength="50"
+                          For="@(() => user.FullName)"
+                          Immediate="true"
+                          Class="mb-3" />
+
+            <MudTextField @bind-Value="user.Email"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          MaxLength="200"
+                          For="@(() => user.Email)"
+                          Immediate="true"
+                          Class="mb-3" />
+
+            <PasswordField @bind-Value="user.Password"
+                           For="@(() => user.Password)"
+                           Label="Senha"
+                           Required="true"
+                           MaxLength="30"
+                           Class="mb-3" />
+
+            <PasswordField @bind-Value="user.ConfirmPassword"
+                           For="@(() => user.ConfirmPassword)"
+                           Label="Confirme a senha"
+                           Required="true"
+                           MaxLength="30"
+                           Class="mb-3" />
+
+            <MudSelect Variant="Variant.Outlined" 
+                       T="UserType" 
+                       @bind-Value="user.UserType"
+                       Label="Tipo de Usuário"
+                       For="@(() => user.UserType)"
+                       Required="true"
+                       Immediate="true">
+                <MudSelectItem Value="UserType.Default">Padrão</MudSelectItem>
+                <MudSelectItem Value="UserType.Master">Master</MudSelectItem>
+                <MudSelectItem Value="UserType.Doctor">Médico</MudSelectItem>
+            </MudSelect>
+
+            @if (user.UserType == UserType.Doctor)
+            {
+                <MudAutocomplete T="DoctorLookupDTO"
+                                 @bind-Value="selectedDoctor"
+                                 SearchFunc="SearchDoctors"
+                                 ToStringFunc="@(p => !string.IsNullOrEmpty(p?.FullName) ? p?.FullName + " (CRM: " + p?.CRM + ")" : string.Empty)"
+                                 Label="Médico"
+                                 Variant="Variant.Outlined"
+                                 ResetValueOnEmptyText="true"
+                                 Adornment="Adornment.Start"
+                                 AdornmentIcon="@Icons.Material.Filled.Person"
+                                 Placeholder="Digite o nome do médico..."
+                                 DebounceInterval="400"
+                                 ShowProgressIndicator="true"
+                                 Required="true"
+                                 ProgressIndicatorColor="Color.Default" />
+            }
+
+            <MudStack Spacing="4" Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                <MudButton OnClick="Cancel" Color="Color.Error" Variant="Variant.Filled">
+                    Cancelar
+                </MudButton>
+
+                <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">
+                    Salvar
+                </MudButton>
+            </MudStack>
+
+        </EditForm>
+    </DialogContent>
+   
+</MudDialog>
+
+@code {
+
+    [Parameter] 
+    public int ClinicId { get; set; }
+
+    private UserCreateViewModel user = new();
+    private DoctorLookupDTO? selectedDoctor;
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await ExecuteAsync(async () =>
+        {
+            var result = await AuthService.RegisterUserAsync(
+                user.FullName,
+                user.Email,
+                user.Password,
+                user.UserType,
+                ClinicId,
+                selectedDoctor?.DoctorId
+            );
+
+            if (!result.Success)
+            {
+                ShowError(result.Message);
+                return false;
+            }
+
+            CloseOk(user);
+            return true;
+        },
+        successMessage: "Usuário cadastrado com sucesso!",
+        errorMessage: "Ocorreu um erro inesperado ao salvar o usuário. Tente novamente mais tarde.");
+    }
+
+
+    private async Task<IEnumerable<DoctorLookupDTO>> SearchDoctors(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
+            return new List<DoctorLookupDTO>();
+
+        return await DoctorService.SearchByNameAsync(value, token);
+    }
+
+    private class UserCreateViewModel
+    {
+        [Required(ErrorMessage = "Informe o nome")]
+        [StringLength(50, ErrorMessage = "O nome deve ter no máximo 50 caracteres.")]
+        public string FullName { get; set; }
+
+        [Required(ErrorMessage = "Informe o email")]
+        [StringLength(200, ErrorMessage = "O e-mail deve ter no máximo 200 caracteres.")]
+        [EmailAddress(ErrorMessage = "Email inválido")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Informe a senha")]
+        [StringLength(30, ErrorMessage = "A senha deve ter no máximo 30 caracteres")]
+        [RegularExpression(
+        @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{6,}$",
+        ErrorMessage = "A senha deve ter no mínimo 6 caracteres, incluindo letra maiúscula, minúscula, número e caractere especial."
+        )]
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "Confirme a sua senha")]
+        [StringLength(30, ErrorMessage = "A senha deve ter no máximo 30 caracteres")]
+        [RegularExpression(
+        @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{6,}$",
+        ErrorMessage = "A senha deve ter no mínimo 6 caracteres, incluindo letra maiúscula, minúscula, número e caractere especial."
+        )]
+        [Compare("Password", ErrorMessage = "A confirmação da senha não confere.")]
+        public string ConfirmPassword { get; set; }
+
+        [Required(ErrorMessage = "Informe o tipo de usuário")]
+        public UserType UserType { get; set; } = UserType.Default;
+    }
+}

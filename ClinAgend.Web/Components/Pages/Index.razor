@@ -1,0 +1,23 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+@inject ICurrentUserService CurrentUserService
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        if (await CurrentUserService.IsAuthenticatedAsync())
+        {
+            string userType = await CurrentUserService.GetUserTypeAsync();
+            if (userType.Equals("SuperAdmin"))
+            {
+                Navigation.NavigateTo("/clinicas");
+            }
+            else
+            {
+                Navigation.NavigateTo("/home");
+            }
+        }
+        else
+            Navigation.NavigateTo("/login");
+    }
+}

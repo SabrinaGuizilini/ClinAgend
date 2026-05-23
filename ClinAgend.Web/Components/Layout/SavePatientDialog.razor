@@ -1,0 +1,158 @@
+﻿@using AutoMapper
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@inherits DialogBase
+@inject IMapper _mapper
+@inject IPatientService PatientService
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@patient" OnValidSubmit="OnValidSubmit" Class="mb-4">
+            <DataAnnotationsValidator />
+
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="patient.FullName"
+                                  Label="Nome"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => patient.FullName)"
+                                  Immediate="true"
+                                  Required="true"
+                                  Class="mb-3"
+                                  MaxLength="100"
+                                  Placeholder="Nome completo" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="patient.CPF"
+                                  Label="CPF"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => patient.CPF)"
+                                  Immediate="true"
+                                  Required="true"
+                                  Class="mb-3"
+                                  Placeholder="Ex: 123.456.789-00"
+                                  Mask="@(new PatternMask("000.000.000-00"))" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField Label="Data de Nascimento"
+                                  @bind-Value="patient.BirthDate"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="dd/mm/aaaa"
+                                  Mask="@(new PatternMask("00/00/0000"))"
+                                  Immediate="true"
+                                  Required="true"
+                                  For="@(() => patient.BirthDate)"
+                                  Class="mb-3" />
+
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="string"
+                               @bind-Value="patient.Sex"
+                               Label="Sexo"
+                               Required="true"
+                               Variant="Variant.Outlined"
+                               For="@(() => patient.Sex)"
+                               Class="mb-3">
+                        <MudSelectItem Value='@("M")'>Masculino</MudSelectItem>
+                        <MudSelectItem Value='@("F")'>Feminino</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="patient.PhoneNumber"
+                                  Label="Celular"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => patient.PhoneNumber)"
+                                  Immediate="true"
+                                  Required="true"
+                                  Class="mb-3"
+                                  Mask="@(new PatternMask("(00)00000-0000"))"
+                                  Placeholder="Ex: (11)99999-9999" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="patient.Address"
+                                  Label="Endereço"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => patient.Address)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  MaxLength="200"
+                                  Placeholder="Não obrigatório" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudSwitch @bind-Value="patient.IsActive"
+                       Color="Color.Primary"
+                       Label="Paciente ativo"
+                       Class="mb-3" />
+                </MudItem>
+
+            </MudGrid>
+
+            <MudStack Spacing="4" Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                <MudButton OnClick="Cancel" Color="Color.Error" Variant="Variant.Filled">
+                    Cancelar
+                </MudButton>
+
+                <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">
+                    Salvar
+                </MudButton>
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public int? PatientId { get; set; }
+
+    [Parameter]
+    public int ClinicId { get; set; }
+
+    private PatientDTO patient = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (PatientId.HasValue)
+        {
+            var patientModel = await PatientService.GetByIdAsync(PatientId.Value);
+            patient = _mapper.Map<PatientDTO>(patientModel);
+        }
+        else
+        {
+            patient.ClinicId = ClinicId;
+            patient.Sex = "M";
+            patient.IsActive = true;
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await ExecuteAsync(async () =>
+        {
+            var patientModel = _mapper.Map<Patient>(patient);
+
+            var result = await PatientService.SavePatientAsync(patientModel);
+
+            if (!result.Success)
+            {
+                ShowError(result.Message);
+                return false;
+            }
+
+            CloseOk(patient);
+            return true;
+        },
+        successMessage: "Paciente salvo com sucesso!",
+        errorMessage: "Ocorreu um erro inesperado ao salvar o paciente. Tente novamente mais tarde.");
+    }
+
+
+}

@@ -1,0 +1,49 @@
+﻿
+<MudGrid Class="px-6 mt-4 mb-2" Spacing="3">
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="2" Class="pa-4 d-flex align-center justify-space-between">
+            <div>
+                <MudText Typo="Typo.caption">Total no período</MudText>
+                <MudText Typo="Typo.h5">@Summary.Total</MudText>
+            </div>
+                <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" Color="Color.Tertiary" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.caption">Confirmadas</MudText>
+                    <MudText Typo="Typo.h5">@Summary.Confirmed</MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Color="Color.Success" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.caption">Canceladas</MudText>
+                    <MudText Typo="Typo.h5">@Summary.Canceled</MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Large" Color="Color.Error" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 d-flex align-center justify-space-between">
+                <div>
+                    <MudText Typo="Typo.caption">Pendentes</MudText>
+                    <MudText Typo="Typo.h5">@Summary.Pending</MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Large" Color="Color.Warning" />
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+
+@code {
+    [Parameter]
+    public AgendSummary Summary { get; set; } = new();
+}

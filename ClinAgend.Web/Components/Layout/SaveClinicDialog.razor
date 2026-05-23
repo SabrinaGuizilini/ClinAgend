@@ -1,0 +1,122 @@
+﻿@using AutoMapper
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@inherits DialogBase
+@inject IMapper _mapper
+@inject IClinicService ClinicService
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@clinic" OnValidSubmit="OnValidSubmit" Class="mb-4">
+            <DataAnnotationsValidator />
+
+             <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="clinic.Name"
+                                  Label="Nome da clínica"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => clinic.Name)"
+                                  Immediate="true"
+                                  Required="true"
+                                  Class="mb-3"
+                                  MaxLength="100" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="clinic.Acess"
+                                  Label="Acesso"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => clinic.Acess)"
+                                  Immediate="true"
+                                  Required="true"
+                                  Class="mb-3"
+                                  MaxLength="50" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="clinic.CNPJ"
+                                  Label="CNPJ"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => clinic.CNPJ)"
+                                  Immediate="true"
+                                  Required="true"
+                                  Mask="@(new PatternMask("00.000.000/0000-00"))"
+                                  Class="mb-3"/>
+                </MudItem>
+             </MudGrid>
+
+             <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="clinic.Address"
+                                  Label="Endereço"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => clinic.Address)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  MaxLength="200"
+                                  Placeholder="Não obrigatório" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="clinic.Phone"
+                                  Label="Telefone"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => clinic.Phone)"
+                                  Immediate="true"
+                                  Class="mb-3"
+                                  Mask="@(new PatternMask("(00)00000-0000"))"
+                                  Placeholder="Ex: (11)99999-9999" />
+                </MudItem>
+             </MudGrid>
+
+            <MudStack Spacing="4" Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                <MudButton OnClick="Cancel" Color="Color.Error" Variant="Variant.Filled">
+                    Cancelar
+                </MudButton>
+
+                <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">
+                    Salvar
+                </MudButton>
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public int? ClinicId { get; set; }
+
+    private ClinicDTO clinic = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ClinicId.HasValue)
+        {
+            var clinicModel = await ClinicService.GetClinicByIdAsync(ClinicId.Value);
+            clinic = _mapper.Map<ClinicDTO>(clinicModel);
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await ExecuteAsync(async () =>
+        {
+            var clinicModel = _mapper.Map<Clinic>(clinic);
+
+            var result = await ClinicService.SaveClinicAsync(clinicModel);
+
+            if (!result.Success)
+            {
+                ShowError(result.Message);
+                return false;
+            }
+
+            CloseOk(clinic);
+            return true;
+        },
+        successMessage: "Clínica salva com sucesso!",
+        errorMessage: "Ocorreu um erro inesperado ao salvar a clínica. Tente novamente mais tarde.");
+    }
+
+}

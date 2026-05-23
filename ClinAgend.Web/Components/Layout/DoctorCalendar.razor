@@ -1,0 +1,458 @@
+﻿@using AutoMapper
+@using System.Globalization
+@inherits PageBase
+@inject IAppointmentService AppointmentService
+@inject IScheduleBlockService ScheduleBlockSevice
+@inject ICurrentUserService CurrentUserService
+@inject IDoctorService DoctorService
+@inject IPatientService PatientService
+@inject IMapper Mapper
+
+<MudStack Class="mt-8 px-10" Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween"> 
+    <MudStack> 
+        <MudText Typo="Typo.h5">Agenda</MudText> 
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2" Spacing="1"> 
+            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> 
+            <MudText Typo="Typo.subtitle1">Dr(a). @doctorName</MudText> 
+        </MudStack> 
+    </MudStack> 
+    @if (AgendAccessMode == AgendMode.Full)
+    {
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenSaveScheduleDialog"> Novo Agendamento </MudButton>
+    } 
+</MudStack>
+
+<AgendSummaryComponent Summary="doctorAgendSummary" />
+
+<MudExpansionPanels Class="mx-6 mt-8" MultiExpansion="true">
+        <MudExpansionPanel>
+            <TitleContent>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.FilterList" Class="mr-2" />
+                    <MudText Typo="Typo.subtitle1">Filtros</MudText>
+                </div>
+            </TitleContent>
+
+            <ChildContent>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="string"
+                                   @bind-SelectedValues="filter.AppointmentOrScheduleBlock"
+                                   Label="Atendimento e/ou bloqueio"
+                                   Variant="Variant.Outlined"
+                                   MultiSelection="true"
+                                   Class="mb-3">
+                            <MudSelectItem Value='@("Atendimento")'>Atendimento</MudSelectItem>
+                            <MudSelectItem Value='@("Bloqueio")'>Bloqueio</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AppointmentType"
+                                   @bind-SelectedValues="filter.AppointmentType"
+                                   Label="Tipo de Consulta"
+                                   Variant="Variant.Outlined"
+                                   MultiSelection="true"
+                                   Class="mb-3">
+                            @foreach (var tipo in Enum.GetValues(typeof(AppointmentType)))
+                        {
+                            <MudSelectItem Value="@( (AppointmentType)tipo )">@tipo</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="BillingType"
+                               @bind-SelectedValues="filter.BillingType"
+                               Label="Convênio"
+                               Variant="Variant.Outlined"
+                               MultiSelection="true"
+                               Class="mb-3">
+                        @foreach (var tipo in Enum.GetValues(typeof(BillingType)))
+                        {
+                            <MudSelectItem Value="@( (BillingType)tipo )">@tipo</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="AppointmentPresenceStatus"
+                               @bind-SelectedValues="filter.AppointmentPresenceStatus"
+                               Label="Status de Presença"
+                               Variant="Variant.Outlined"
+                               MultiSelection="true"
+                               Class="mb-3">
+                        @foreach (var status in Enum.GetValues(typeof(AppointmentPresenceStatus)))
+                        {
+                            <MudSelectItem Value="@( (AppointmentPresenceStatus)status )">@status</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="AppointmentStatus"
+                               @bind-SelectedValues="filter.AppointmentStatus"
+                               Label="Status do agendamento"
+                               Variant="Variant.Outlined"
+                               MultiSelection="true"
+                               Class="mb-3">
+                        <MudSelectItem Value="AppointmentStatus.Agendado">Agendado</MudSelectItem>
+                        <MudSelectItem Value="AppointmentStatus.Confirmado">Confirmado</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudCheckBox Class="mt-2" @bind-Value="filter.OnlyCanceledAppointment" Label="Somente agendamentos cancelados" Color="Color.Primary"></MudCheckBox>
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudAutocomplete T="PatientLookupDTO"
+                                     @bind-Value="filter.Patient"
+                                     SearchFunc="SearchPatients"
+                                     ToStringFunc="@(p => !string.IsNullOrEmpty(p?.FullName) ? p?.FullName + " (CPF: " + p?.CPF + ")" : string.Empty)"
+                                     Label="Paciente"
+                                     Variant="Variant.Outlined"
+                                     ResetValueOnEmptyText="true"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.Person"
+                                     Placeholder="Digite o nome do paciente..."
+                                     DebounceInterval="400"
+                                     ShowProgressIndicator="true"
+                                     ProgressIndicatorColor="Color.Default" />
+                </MudItem>
+            </MudGrid>
+
+            <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-3">
+                <MudButton OnClick="ReloadWithFilters" Color="Color.Primary" Variant="Variant.Filled">
+                    <MudIcon Icon="@Icons.Material.Filled.FilterList" Class="me-2" />
+                    Filtrar
+                </MudButton>
+                <MudButton OnClick="ClearFilters" Color="Color.Secondary" Variant="Variant.Filled">
+                    <MudIcon Icon="@Icons.Material.Filled.RestartAlt" Class="me-2" />
+                    Limpar Campos
+                </MudButton>
+            </MudStack>
+
+        </ChildContent>
+    </MudExpansionPanel>
+    <MudExpansionPanel>
+        <TitleContent>
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" />
+                <MudText Typo="Typo.subtitle1">Opções de visualização</MudText>
+            </div>
+        </TitleContent>
+
+        <ChildContent>
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudSelect @bind-Value="_interval" T="CalendarTimeInterval" Label="Intervalo de tempo" Variant="Variant.Outlined">
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes5">5 Minutos</MudSelectItem>
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes10">10 Minutos</MudSelectItem>
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes15">15 Minutos</MudSelectItem>
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes20">20 Minutos</MudSelectItem>
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes30">30 Minutos</MudSelectItem>
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes60">1 Hora</MudSelectItem>
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes120">2 Horas</MudSelectItem>
+                        <MudSelectItem Value="CalendarTimeInterval.Minutes180">3 Horas</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+<MudStack Class="px-6 py-3">
+    <MudCalendar T="AppointmentCalendarItem" Culture="@CultureInfo.GetCultureInfo("pt-BR")" Items="appointments" CellRangeSelected="CellRangeSelected" ItemClicked="ItemClicked" MonthCellMinHeight="115" DayTimeInterval="_interval" DateRangeChanged="DateRangeChanged" IsDateTimeDisabledFunc="IsDateDisabled" AdditionalDateTimeClassesFunc="AdditionalDateTimeClasses">
+        <CellTemplate>
+            <div class="mud-cal-cell-template">
+                <MudChip T="string" Label="true" Style="@($"background-color: {context.Color}")" Class="mud-cal-cell-template-chip">@context.Text</MudChip>
+                </div>
+            </CellTemplate>
+        </MudCalendar>
+</MudStack>
+
+    @code {
+    [Parameter]
+    public int DoctorId { get; set; }
+
+    [Parameter] 
+    public AgendMode AgendAccessMode { get; set; }
+
+    private int? clinicId;
+    private string doctorName;
+    private string doctorWorkingDays;
+    private TimeSpan doctorStartTime;
+    private TimeSpan doctorEndTime;
+    private int? doctorBreakBetweenAppointments;
+
+    private List<DayOfWeek> _workingDays = new();
+    private CalendarFilters filter = new();
+    private AgendSummary doctorAgendSummary = new();
+
+    private List<AppointmentCalendarItem> appointments = new();
+    private CalendarTimeInterval _interval = CalendarTimeInterval.Minutes30;
+
+    private DateTime? lastStartRange;
+    private DateTime? lastEndRange;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DoctorId <= 0)
+            return;
+
+        try
+        {
+            clinicId = await CurrentUserService.GetUserClinicIdAsync();
+            var doctor = await DoctorService.GetByIdAsync(DoctorId);
+            if (doctor is not null)
+            {
+                doctorName = doctor!.FullName;
+                doctorWorkingDays = doctor.WorkingDays;
+                doctorStartTime = doctor.StartTime;
+                doctorEndTime = doctor.EndTime;
+                doctorBreakBetweenAppointments = doctor.BreakBetweenAppointments;
+
+                _workingDays = doctorWorkingDays
+                    .Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(dayName => GetDayOfWeek(dayName))
+                    .Where(day => day.HasValue)
+                    .Select(day => day.Value)
+                    .ToList();
+            }
+            else
+            {
+                ShowError("Não foi possível recuperar os dados do médico! Tente novamente mais tarde.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError("Ocorreu um erro inesperado ao carregar o calendário! Tente novamente mais tarde.");
+        }
+    }
+
+    private Task OpenSaveScheduleDialog()
+    {
+        var parameters = new DialogParameters { ["ClinicId"] = clinicId, ["DoctorId"] = DoctorId, ["DoctorName"] = doctorName };
+
+        return OpenScheduleDialogAsync(
+         "Novo Agendamento",
+         parameters
+       );
+    }
+
+    private bool IsDateDisabled(DateTime dateTime, CalendarView view)
+    {
+        var currentDay = dateTime.DayOfWeek;
+        var currentTime = dateTime.TimeOfDay;
+
+        return !_workingDays.Contains(currentDay) || (view != CalendarView.Month && (currentTime < doctorStartTime || currentTime >= doctorEndTime));
+    }
+
+    private string AdditionalDateTimeClasses(DateTime dateTime, CalendarView view)
+    {
+        var currentDay = dateTime.DayOfWeek;
+        var currentTime = dateTime.TimeOfDay;
+
+        if (!_workingDays.Contains(currentDay) || (view != CalendarView.Month && (currentTime < doctorStartTime || currentTime >= doctorEndTime)))
+        {
+            return "gray-background";
+        }
+
+        return string.Empty;
+    }
+
+    private Task CellRangeSelected(DateRange dateRange)
+    {
+        if (AgendAccessMode == AgendMode.ReadOnly || !(dateRange.Start.HasValue && dateRange.End.HasValue))
+            return Task.CompletedTask;
+
+        var parameters = new DialogParameters { ["ClinicId"] = clinicId, ["DoctorId"] = DoctorId, ["DoctorName"] = doctorName, ["Start"] = dateRange.Start, ["End"] = dateRange.End };
+
+        return OpenScheduleDialogAsync(
+         "Novo Agendamento",
+         parameters
+       );
+    }
+
+    private async Task DateRangeChanged(DateRange dateRange)
+    {
+        if (!dateRange.Start.HasValue || !dateRange.End.HasValue)
+            return;
+
+        try
+        {
+            DateTime start = dateRange.Start.Value;
+            DateTime end = dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
+
+            lastStartRange = dateRange.Start;
+            lastEndRange = dateRange.End;
+
+            var totalDays = (end.Date - start.Date).TotalDays;
+
+            appointments.Clear();
+
+            if (!filter.AppointmentOrScheduleBlock.Any() || filter.AppointmentOrScheduleBlock.Contains("Atendimento"))
+            {
+                var doctorAppointments = await AppointmentService.GetDoctorAppointmentsByDateRangeAsync(DoctorId, start, end, filter);
+
+                foreach (var appointment in doctorAppointments)
+                {
+                    appointments.Add(new()
+                        {
+                            Start = appointment.StartTime,
+                            End = appointment.EndTime,
+                            AppointmentId = appointment.AppointmentId,
+                            isScheduleBlock = false,
+                            isInterval = false,
+                            Color = CalendarColors.GetAppointmentColor(false, appointment.AppointmentStatus, appointment.AppointmentPresenceStatus),
+                            Text = $"{appointment.AppointmentType.ToString()} | {DateTimeConverter.ToTimeString(appointment.StartTime)} - {DateTimeConverter.ToTimeString(appointment.EndTime)} | {appointment.Patient.FullName} | {appointment.AppointmentStatus.ToString()}"
+                        });
+
+                    if (doctorBreakBetweenAppointments.HasValue && totalDays < 10)
+                    {
+                        appointments.Add(new()
+                            {
+                                Start = appointment.EndTime,
+                                End = appointment.EndTime.AddMinutes(doctorBreakBetweenAppointments.Value),
+                                isScheduleBlock = false,
+                                isInterval = true,
+                                Color = "#b0c2d4",
+                                Text = $"Intervalo - {doctorBreakBetweenAppointments.Value} min"
+                            });
+                    }
+                }
+
+                doctorAgendSummary.Total = doctorAppointments.Count;
+                doctorAgendSummary.Confirmed = doctorAppointments.Count(x => x.AppointmentStatus == AppointmentStatus.Confirmado);
+                doctorAgendSummary.Canceled = doctorAppointments.Count(x => x.AppointmentStatus == AppointmentStatus.Cancelado);
+                doctorAgendSummary.Pending = doctorAppointments.Count(x => x.AppointmentStatus == AppointmentStatus.Agendado);
+            }
+            else
+            {
+                doctorAgendSummary.Total = 0;
+                doctorAgendSummary.Confirmed = 0;
+                doctorAgendSummary.Canceled = 0;
+                doctorAgendSummary.Pending = 0;
+            }
+
+            if (!filter.AppointmentOrScheduleBlock.Any() || filter.AppointmentOrScheduleBlock.Contains("Bloqueio"))
+            {
+                var doctorScheduleBlocks = await ScheduleBlockSevice.GetDoctorScheduleBlocksByDateRangeAsync(DoctorId, start, end);
+
+                foreach (var scheduleBlock in doctorScheduleBlocks)
+                {
+                    appointments.Add(new()
+                        {
+                            Start = scheduleBlock.StartTime,
+                            End = scheduleBlock.EndTime,
+                            AppointmentId = scheduleBlock.ScheduleBlockId,
+                            isScheduleBlock = true,
+                            isInterval = false,
+                            Color = CalendarColors.GetAppointmentColor(true),
+                            Text = $"Bloqueio de horário - {DateTimeConverter.ToTimeString(scheduleBlock.StartTime)} - {DateTimeConverter.ToTimeString(scheduleBlock.EndTime)}"
+                        });
+                }
+            }
+        }
+        catch (ArgumentException ex)
+        {
+            ShowError(ex.Message);
+
+            appointments.Clear();
+            doctorAgendSummary = new AgendSummary();
+        }
+        catch (Exception ex)
+        {
+            ShowError("Erro ao carregar agenda. Tente novamente mais tarde.");
+
+            appointments.Clear();
+            doctorAgendSummary = new AgendSummary();
+        }
+
+    }
+
+    private Task ItemClicked(AppointmentCalendarItem item)
+    {
+        if (item.isInterval)
+        {
+            return Task.CompletedTask;
+        }
+
+        var parameters = new DialogParameters { ["ClinicId"] = clinicId, ["DoctorId"] = DoctorId, ["DoctorName"] = doctorName, ["AppointmentId"] = item.AppointmentId, ["IsScheduleBlock"] = item.isScheduleBlock, ["ScheduleInteractionMode"] = AgendAccessMode };
+
+        return OpenScheduleDialogAsync(
+            "Detalhes do Agendamento",
+            parameters
+        );
+
+    }
+
+    private async Task OpenScheduleDialogAsync(string title, DialogParameters parameters)
+    {
+        var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                CloseButton = true
+            };
+
+        var confirmed = await ShowDialogAsync<SaveScheduleDialog>(
+           title,
+           parameters,
+           options);
+
+        if (confirmed)
+        {
+            await DateRangeChanged(new DateRange()
+                {
+                    Start = lastStartRange,
+                    End = lastEndRange
+                });
+        }
+    }
+
+    private DayOfWeek? GetDayOfWeek(string dayName)
+    {
+        var normalizedName = dayName.ToLowerInvariant().Trim();
+
+        return normalizedName switch
+        {
+            "domingo" => DayOfWeek.Sunday,
+            "segunda" => DayOfWeek.Monday,
+            "terça" => DayOfWeek.Tuesday,
+            "quarta" => DayOfWeek.Wednesday,
+            "quinta" => DayOfWeek.Thursday,
+            "sexta" => DayOfWeek.Friday,
+            "sábado" => DayOfWeek.Saturday,
+            _ => (DayOfWeek?)null
+        };
+    }
+
+    private async Task<IEnumerable<PatientLookupDTO>> SearchPatients(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
+            return new List<PatientLookupDTO>();
+
+        return await PatientService.SearchByNameAsync(value, token);
+    }
+
+    private async Task ReloadWithFilters()
+    {
+        await DateRangeChanged(new DateRange()
+            {
+                Start = lastStartRange,
+                End = lastEndRange
+            });
+    }
+
+    private void ClearFilters()
+    {
+        filter = new CalendarFilters();
+    }
+}

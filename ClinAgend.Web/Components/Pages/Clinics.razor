@@ -1,0 +1,157 @@
+﻿@page "/clinicas"
+@inherits PageBase
+@using AutoMapper
+@attribute [Authorize(Policy = "SuperAdminOnly")]
+@inject IClinicService ClinicService
+@inject IMapper Mapper
+
+<MudStack Class="mt-8 px-10" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+    <MudText Typo="Typo.h5">Clínicas</MudText>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenSaveClinicDialog">
+        Nova Clínica
+    </MudButton>
+</MudStack>
+
+<MudDataGrid T="ClinicLookupDTO" Items="@clinics" Hover="true" Class="pa-4 ma-8">
+    <Columns>
+        <PropertyColumn Property="u => u.Name" Title="Nome" HeaderStyle="font-weight: bold;" />
+        <PropertyColumn Property="u => u.FormatedCNPJ" Title="CNPJ" HeaderStyle="font-weight: bold;" />
+
+        <TemplateColumn Title="Editar" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Clinic">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Tertiary"
+                               Size="Size.Medium"
+                               @onclick="() => OpenEditClinicDialog(Clinic.Item.ClinicId)" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Excluir" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Clinic">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Size="Size.Medium"
+                               @onclick="() => ConfirmDelete(Clinic.Item.ClinicId)" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Novo usuário" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Clinic">
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               Style="font-size: 15px;"
+                               @onclick="() => OpenSaveUserDialog(Clinic.Item.ClinicId, Clinic.Item.Name)"
+                               StartIcon="@Icons.Material.Filled.Add">
+                        Novo usuário
+                    </MudButton>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private List<ClinicLookupDTO> clinics = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClinics();
+    }
+
+    private async Task LoadClinics()
+    {
+        try
+        {
+            var clinicsModel = await ClinicService.GetAllClinicsAsync();
+
+            clinics = clinicsModel
+                .Select(c => new ClinicLookupDTO(c.ClinicId, c.Name, c.CNPJ))
+                .ToList();
+        }
+        catch
+        {
+            ShowError("Ocorreu um erro inesperado ao carregar clínicas. Tente novamente mais tarde.");
+        }
+    }
+
+    private Task OpenSaveClinicDialog()
+    {
+        return OpenClinicDialogAsync(
+            "Nova Clínica",
+            new DialogParameters());
+    }
+
+    private Task OpenEditClinicDialog(int clinicId)
+    {
+        return OpenClinicDialogAsync(
+            "Editar Clínica",
+            new DialogParameters
+                {
+                    ["ClinicId"] = clinicId
+                });
+    }
+
+
+    private async Task OpenClinicDialogAsync(string title, DialogParameters parameters)
+    {
+        var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                CloseButton = true
+            };
+
+        var confirmed = await ShowDialogAsync<SaveClinicDialog>(
+            title,
+            parameters,
+            options);
+
+        if (confirmed)
+            await LoadClinics();
+    }
+
+
+    private async Task OpenSaveUserDialog(int clinicId, string clinicName)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ClinicId", clinicId }
+        };
+
+        _ = await ShowDialogAsync<SaveUserDialog>(
+            $"Cadastrar Usuário - {clinicName}",
+            parameters);
+    }
+
+    private async Task ConfirmDelete(int clinicId)
+    {
+        var parameters = new DialogParameters
+            {
+                ["ContentText"] = "Deseja realmente excluir esta clínica?",
+                ["ButtonText"] = "Excluir"
+            };
+
+        var confirmed = await ShowDialogAsync<ConfirmActionDialog>(
+             "Confirmar exclusão",
+             parameters);
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            var result = await ClinicService.DeleteClinicAsync(clinicId);
+
+            if (result.Success)
+            {
+                await LoadClinics();
+                ShowSuccess("Clínica excluída com sucesso!");
+            }
+            else
+                ShowError(result.Message);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Ocorreu um erro inesperado ao excluir a clínica. Tente novamente mais tarde.");
+        }
+    }
+}

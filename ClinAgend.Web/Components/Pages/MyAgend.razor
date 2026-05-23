@@ -1,0 +1,20 @@
+﻿@page "/minha-agenda"
+@attribute [Authorize(Policy = "DoctorOnly")]
+@inject ICurrentUserService CurrentUserService
+@inject IDoctorService DoctorService
+
+@if (DoctorId > 0)
+{
+    <DoctorCalendar DoctorId="DoctorId" AgendAccessMode="AgendMode.ReadOnly" />
+}
+
+@code {
+    public int DoctorId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        string userId = await CurrentUserService.GetUserIdAsync();
+        var doctor = await DoctorService.GetDoctorByUserId(userId);
+        DoctorId = doctor.DoctorId;
+    }
+}

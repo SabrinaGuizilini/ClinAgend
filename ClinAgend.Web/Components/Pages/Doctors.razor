@@ -1,0 +1,253 @@
+﻿@page "/medicos"
+@inherits PageBase
+@using AutoMapper
+@attribute [Authorize(Policy = "DefaultAndMaster")]
+@inject ICurrentUserService CurrentUserService
+@inject IDoctorService DoctorService
+@inject IMapper Mapper
+
+<MudStack Class="mt-8 px-10" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+    <MudText Typo="Typo.h5">Médicos</MudText>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenSaveDoctorDialog">
+        Novo Médico
+    </MudButton>
+</MudStack>
+
+<MudDataGrid @ref="dataGrid"
+             T="DoctorDataGridDTO"
+             ServerData="LoadDoctors"
+             Hover="true"
+             Class="pa-4 ma-8"
+             Filterable="false"
+             Loading="@loading">
+
+    <ToolBarContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Style="width: 100%;" Justify="Justify.SpaceBetween" Class="my-2">
+            <MudTextField T="string"
+                      ValueChanged="@(s => OnSearch(s))"
+                      Placeholder="Buscar por nome, CRM ou especialidade"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Style="max-width: 370px;"
+                      Class="my-2" />
+
+            <MudRadioGroup T="EntityStatusFilter" ValueChanged="@(s => OnChangeStatusFilter(s))">
+                <MudRadio Value="EntityStatusFilter.Active" Color="Color.Primary" Dense="true">Ativos</MudRadio>
+                <MudRadio Value="EntityStatusFilter.Inactive" Color="Color.Primary" Dense="true">Inativos</MudRadio>
+                <MudRadio Value="EntityStatusFilter.All" Color="Color.Primary" Dense="true">Todos</MudRadio>
+            </MudRadioGroup>
+        </MudStack>
+    </ToolBarContent>
+
+    <Columns>
+        <PropertyColumn Property="x => x.FullName" Title="Nome Completo" HeaderStyle="font-weight: bold;" />
+        <PropertyColumn Property="x => x.CRM" Title="CRM" HeaderStyle="font-weight: bold;" />
+        <PropertyColumn Property="x => x.Specialty" Title="Especialidade" HeaderStyle="font-weight: bold;" />
+
+        <TemplateColumn Title="Status" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Medico">
+                <MudText Style="font-size: 14px;">
+                    @(Medico.Item.IsActive ? "Ativo" : "Inativo")
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Editar" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Medico">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Tertiary"
+                               Size="Size.Medium"
+                               @onclick="() => OpenEditDoctorDialog(Medico.Item.DoctorId)" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Excluir" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Medico">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Size="Size.Medium"
+                               @onclick="() => ConfirmDelete(Medico.Item.DoctorId)" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Ver Agenda" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="Medico">
+                @if (Medico.Item.IsActive)
+                {
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               Style="font-size: 15px;"
+                               StartIcon="@Icons.Material.Filled.CalendarMonth"
+                               Href="@($"/agenda/{Medico.Item.DoctorId}")">
+                        Ver Agenda
+                    </MudButton>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager Class="pt-4" T="DoctorDataGridDTO" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private int? clinicId;
+    private MudDataGrid<DoctorDataGridDTO> dataGrid;
+    private bool loading;
+    private string? searchText;
+    private EntityStatusFilter statusFilter = EntityStatusFilter.Active;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            clinicId = await CurrentUserService.GetUserClinicIdAsync()
+                ?? throw new InvalidOperationException("Usuário sem clínica associada.");
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+
+    private Task OpenSaveDoctorDialog()
+    {
+        return OpenDoctorDialogAsync(
+           "Novo Médico",
+           new DialogParameters
+               {
+                   ["ClinicId"] = clinicId
+               });
+    }
+
+    private Task OpenEditDoctorDialog(int doctorId)
+    {
+        return OpenDoctorDialogAsync(
+          "Editar Médico",
+          new DialogParameters
+              {
+                  ["DoctorId"] = doctorId
+              });
+    }
+
+    private async Task OpenDoctorDialogAsync(string title, DialogParameters parameters)
+    {
+        var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                CloseButton = true
+            };
+
+        var confirmed = await ShowDialogAsync<SaveDoctorDialog>(
+            title,
+            parameters,
+            options);
+
+        if (confirmed)
+            await dataGrid!.ReloadServerData();
+    }
+
+    private async Task ConfirmDelete(int doctorId)
+    {
+        var parameters = new DialogParameters
+            {
+                ["ContentText"] = "Deseja realmente excluir este médico?",
+                ["ButtonText"] = "Excluir"
+            };
+
+        var confirmed = await ShowDialogAsync<ConfirmActionDialog>(
+             "Confirmar exclusão",
+             parameters);
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            var result = await DoctorService.DeleteDoctorAsync(doctorId);
+
+            if (result.Success)
+            {
+                await dataGrid!.ReloadServerData();
+                ShowSuccess("Médico excluído com sucesso!");
+            }
+            else
+                ShowError(result.Message);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível excluir o médico. Tente novamente mais tarde.");
+        }
+    }
+
+
+    private async Task<GridData<DoctorDataGridDTO>> LoadDoctors(GridState<DoctorDataGridDTO> state)
+    {
+         if (!clinicId.HasValue)
+            return GridDataExtensions.Empty<DoctorDataGridDTO>();
+
+        try
+        {
+            loading = true;
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+
+            var (doctors, total) = await DoctorService.GetPaginatedAsync(
+                clinicId: clinicId.Value,
+                page: state.Page,
+                pageSize: state.PageSize,
+                statusFilter: statusFilter,
+                search: searchText,
+                sortBy: sort?.SortBy,
+                descending: sort?.Descending ?? false);
+
+            return new GridData<DoctorDataGridDTO>
+                {
+                    Items = doctors.Select(d =>
+                        new DoctorDataGridDTO(
+                            d.DoctorId,
+                            d.IsActive,
+                            d.FullName,
+                            d.CRM,
+                            d.Specialty
+                        )),
+                    TotalItems = total
+                };
+
+        }
+        catch (Exception ex)
+        {
+            ShowError("Erro ao carregar os médicos.");
+            return GridDataExtensions.Empty<DoctorDataGridDTO>();
+        }
+        finally
+        {
+            loading = false;
+        }
+
+    }
+
+    private Task OnSearch(string text)
+    {
+        searchText = text;
+        return dataGrid.ReloadServerData();
+    }
+
+    private Task OnChangeStatusFilter(EntityStatusFilter status)
+    {
+        statusFilter = status;
+        return dataGrid.ReloadServerData();
+    }
+
+    private record DoctorDataGridDTO(
+        int DoctorId,
+        bool IsActive,
+        string FullName,
+        string CRM,
+        string Specialty
+    );
+
+}

@@ -1,0 +1,135 @@
+﻿@page "/configuracoes-clinica"
+@inherits PageBase
+@using AutoMapper
+@attribute [Authorize(Policy = "MasterOnly")]
+@inject ICurrentUserService CurrentUserService
+@inject IClinicService ClinicService
+@inject IMapper _mapper
+
+<MudText Typo="Typo.h5" Class="my-8 px-10">Configurações da Clínica</MudText>
+
+<EditForm Model="@clinicSettings" OnValidSubmit="OnValidSubmit" Class="mb-4">
+    <DataAnnotationsValidator />
+
+    <MudExpansionPanels Class="mx-6 mt-8" MultiExpansion="true">
+        <MudExpansionPanel>
+            <TitleContent>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Custom.Brands.WhatsApp" Class="mr-2" />
+                    <MudText Typo="Typo.subtitle1">WhatsApp</MudText>
+                </div>
+            </TitleContent>
+            <ChildContent>
+                <MudGrid>
+
+                    <MudItem xs="12">
+                        <MudSwitch @bind-Value="clinicSettings.UseConfirmationLink"
+                                   Color="Color.Primary"
+                                   Label="Utilizar link de confirmação de consulta" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="clinicSettings.WhatsAppAppointmentConfirmationMessage"
+                                      Label="Mensagem padrão do WhatsApp"
+                                      Variant="Variant.Outlined"
+                                      Lines="8"
+                                      AutoGrow="true"
+                                      Immediate="true"
+                                      For="@(() => clinicSettings.WhatsAppAppointmentConfirmationMessage)"
+                                      MaxLength="2000"
+                                      HelperText="Variáveis disponíveis: {Paciente}, {Medico}, {Data}, {Hora}, {LinkConfirmacao}" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+
+                        <MudAlert Severity="Severity.Info" Dense="true">
+
+                            Exemplo de mensagem:
+
+                            <MudPaper Class="pa-3 mt-2" Elevation="0" Style="background-color: rgba(33, 150, 243, 0.08);">
+
+                                Olá {Paciente}!<br /><br />
+
+                                Sua consulta com Dr(a). {Medico} foi agendada para {Data} às {Hora}.<br /><br />
+
+                                @if (clinicSettings.UseConfirmationLink)
+                                {
+                                    <span>
+                                        Confirme sua presença através do link:<br />
+                                        {LinkConfirmacao}
+                                    </span>
+                                }
+
+                            </MudPaper>
+
+                        </MudAlert>
+
+                    </MudItem>
+
+                </MudGrid>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+   
+    <MudStack Row="true"
+         Justify="Justify.FlexEnd"
+         Spacing="2"
+         Class="mt-6 mx-5">
+
+       <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary">
+
+            Salvar Configurações
+
+       </MudButton>
+
+    </MudStack>
+
+
+</EditForm>
+
+
+@code {
+    private int? clinicId;
+    private ClinicSettingsDTO clinicSettings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            clinicId = await CurrentUserService.GetUserClinicIdAsync()
+                ?? throw new InvalidOperationException("Usuário sem clínica associada.");
+
+            var clinicSettingsModel = await ClinicService.GetClinicSettingsByClinicIdAsync(clinicId.Value);
+            clinicSettings = _mapper.Map<ClinicSettingsDTO>(clinicSettingsModel);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            var model = _mapper.Map<ClinicSettings>(clinicSettings);
+
+            var result = await ClinicService.SaveClinicSettingsAsync(model);
+
+            if (result.Success)
+            {
+                ShowSuccess("Configurações salvas com sucesso!");
+            }
+            else
+            {
+                ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+}

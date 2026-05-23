@@ -1,0 +1,364 @@
+﻿@page "/home"
+@inherits PageBase
+@attribute [Authorize(Policy = "NotSuperAdmin")]
+@inject ICurrentUserService CurrentUserService
+@inject IAppointmentService AppointmentService
+@inject IClinicService ClinicService
+@inject IDoctorService DoctorService
+
+<MudStack Class="mt-8 mb-6 px-10">
+    <MudStack>
+        <MudText Class="" Typo="Typo.h5">Bem-vindo(a), @userName!</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.Domain" Size="Size.Small" />
+                <MudText Typo="Typo.subtitle1">@clinicName</MudText>
+            </MudStack>
+    </MudStack>
+</MudStack>
+
+ <MudStack Class="px-10 mb-4" Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2"> 
+        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Medium" Color="Color.Primary" />
+        <MudText Typo="Typo.h6" Class="font-weight-bold">
+            Agenda –
+            @Capitalize(selectedDate.ToString("dddd, dd 'de' MMMM 'de' yyyy",
+                 new System.Globalization.CultureInfo("pt-BR")))
+        </MudText>
+</MudStack>
+
+<AgendSummaryComponent Summary="todayAgendSummary" />
+
+<div class="custom-date-select">
+    <MudSelect T="DateTime"
+               Label="Selecionar dia"
+               Value="selectedDate"
+               ValueChanged="OnSelectedDateChanged"
+               Variant="Variant.Outlined"
+               Class="px-6 mt-4"
+               Style="max-width:400px;">
+
+        @foreach (var date in availableDates)
+        {
+            <MudSelectItem Value="@date">
+                @Capitalize(date.ToString("dd/MM/yyyy - dddd",
+                     new System.Globalization.CultureInfo("pt-BR")))
+            </MudSelectItem>
+        }
+
+    </MudSelect>
+</div>
+
+
+ <MudPaper Class="mx-6 mb-6 mt-12 px-6">
+    @if (hasAppointmentsToday)
+    {
+        @foreach (var group in appointmentsGroupedByHour)
+        {
+            <MudGrid Class="hora-row">
+
+                <!-- Coluna do horário -->
+                <MudItem xs="2" Class="hora-col" Style="padding-left: 0;">
+                    <div class="hora-text">@group.Time</div>
+                </MudItem>
+
+                <!-- Coluna das consultas -->
+                <MudItem xs="10" Class="consulta-col">
+
+                    <div class="consultas-container">
+                        @foreach (var appointment in group.Appointments)
+                        {
+                            <MudCard Class="consulta-card" Elevation="3" @onclick="() => OpenScheduleDetails(appointment)" Style=@($"border-left: 6px solid {appointment.Color};")>
+                                <MudCardContent>
+
+                                    <div class="d-flex justify-space-between align-center mb-2">
+                                        <MudText Typo="Typo.body2" Class="font-weight-bold">
+                                            @appointment.StartTime - @appointment.EndTime
+                                        </MudText>
+
+                                        <MudChip T="string"
+                                                 Style=@($"background-color:{appointment.Color}; color:white;")
+                                                 Class="rounded-pill px-3"
+                                                 Size="Size.Small">
+                                            @appointment.Status
+                                        </MudChip>
+                                    </div>
+
+                                    <div class="d-flex align-center mb-1">
+                                        <MudIcon Icon="@Icons.Material.Filled.MedicalServices" Size="Size.Small" Class="mr-1" />
+                                        <MudText>Dr(a). @appointment.DoctorName</MudText>
+                                     </div>
+
+                                     <div class="d-flex align-center mb-1">
+                                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                                        <MudText>@appointment.PatientName</MudText>
+                                     </div>
+
+                                     <div class="d-flex align-center">
+                                        <MudIcon Icon="@Icons.Material.Filled.Bookmark" Size="Size.Small" Class="mr-1" />
+                                        <MudText>@appointment.AppointmentType</MudText>
+                                     </div>
+
+                                    </MudCardContent>
+                                </MudCard>
+                        }
+                    </div>
+
+                </MudItem>
+
+            </MudGrid>
+        }
+
+    }
+    else
+    {
+        <div class="d-flex flex-column align-center justify-center pa-4">
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" Size="Size.Medium" Class="mr-2" />
+                <MudText Typo="Typo.h6" Class="font-weight-bold">
+                    Nenhum atendimento agendado para este dia.
+                </MudText>
+            </div>
+        </div>
+
+    }
+</MudPaper>
+
+
+@code {
+    private string? userName;
+    private string? userType;
+    private string clinicName;
+    private string doctorName;
+    private int doctorId;
+    private int? clinicId;
+    private List<AppointmentGroup> appointmentsGroupedByHour = new();
+    private AgendSummary todayAgendSummary = new();
+
+    private bool hasAppointmentsToday => appointmentsGroupedByHour?.Count > 0;
+
+    private DateTime selectedDate = DateTime.Today;
+
+    private List<DateTime> availableDates = Enumerable
+        .Range(0, 7)
+        .Select(x => DateTime.Today.AddDays(x))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            userName = await CurrentUserService.GetUserNameAsync();
+            userType = await CurrentUserService.GetUserTypeAsync();
+            clinicId = await CurrentUserService.GetUserClinicIdAsync();
+            clinicName = await ClinicService.GetClinicNameByIdAsync(clinicId.Value);
+
+            if (userType.Equals("Doctor"))
+            {
+                string userId = await CurrentUserService.GetUserIdAsync();
+                var doctor = await DoctorService.GetDoctorByUserId(userId);
+                doctorName = doctor.FullName;
+                doctorId = doctor.DoctorId;
+                userName = "Dr(a). " + userName;
+            }
+
+            await LoadAppointmentsAsync();
+        }
+        catch (Exception)
+        {
+            ShowError("Ocorreu um erro inesperado ao inicializar a agenda.");
+        }
+    }
+
+    private async Task LoadAppointmentsAsync()
+    {
+        try
+        {
+            appointmentsGroupedByHour.Clear();
+            todayAgendSummary = new();
+
+            List<Appointment> appointments = new();
+
+            var startDate = selectedDate.Date;
+            var endDate = selectedDate.Date.AddDays(1).AddSeconds(-1);
+
+            if (userType.Equals("Doctor"))
+            {
+                appointments = await AppointmentService
+                    .GetDoctorAppointmentsByDateRangeAsync(
+                        doctorId,
+                        startDate,
+                        endDate,
+                        null);
+            }
+            else
+            {
+                appointments = await AppointmentService
+                    .GetClinicAppointmentsByDateRangeAsync(
+                        clinicId.Value,
+                        startDate,
+                        endDate);
+            }
+
+            if (appointments is null || appointments.Count == 0)
+                return;
+
+            List<AppointmentViewModel> todayAppointments = new();
+
+            foreach (var appointment in appointments)
+            {
+                todayAppointments.Add(new AppointmentViewModel()
+                    {
+                        AppointmentId = appointment.AppointmentId,
+                        DoctorId = appointment.DoctorId,
+                        DoctorName = string.IsNullOrEmpty(doctorName)
+                                ? appointment.Doctor.FullName
+                                : doctorName,
+
+                        PatientName = appointment.Patient.FullName,
+                        AppointmentType = appointment.AppointmentType.ToString(),
+                        Status = appointment.AppointmentStatus.ToString(),
+                        StartTime = DateTimeConverter.ToTimeString(appointment.StartTime),
+                        EndTime = DateTimeConverter.ToTimeString(appointment.EndTime),
+                        StartDateTime = appointment.StartTime,
+                        EndDateTime = appointment.EndTime,
+                        Color = CalendarColors.GetAppointmentColor(
+                                false,
+                                appointment.AppointmentStatus)
+                    });
+            }
+
+            List<string> dayTimeSlots = new();
+
+            var earliestTime = todayAppointments.Min(a => a.StartDateTime);
+
+            var latestTime = todayAppointments.Max(a => a.StartDateTime);
+
+            var startHour = new DateTime(
+                earliestTime.Year,
+                earliestTime.Month,
+                earliestTime.Day,
+                earliestTime.Hour,
+                0,
+                0
+            );
+
+            var endHour = new DateTime(
+                latestTime.Year,
+                latestTime.Month,
+                latestTime.Day,
+                latestTime.Hour,
+                0,
+                0
+            );
+
+            for (var h = startHour; h <= endHour; h = h.AddHours(1))
+            {
+                dayTimeSlots.Add(h.ToString("HH:mm"));
+            }
+
+            var timeSlotsDateTime = dayTimeSlots
+                .Select(h => selectedDate.Date.Add(TimeSpan.Parse(h)))
+                .ToList();
+
+            foreach (var timeSlot in timeSlotsDateTime)
+            {
+                var slotStart = timeSlot;
+                var slotEnd = timeSlot.AddHours(1);
+
+                var appointmentsInSlot = todayAppointments
+                    .Where(a =>
+                        a.StartDateTime >= slotStart &&
+                        a.StartDateTime < slotEnd)
+                    .OrderBy(a => a.StartDateTime)
+                    .ToList();
+
+                appointmentsGroupedByHour.Add(new AppointmentGroup
+                    {
+                        Time = timeSlot.ToString("HH:mm"),
+                        Appointments = appointmentsInSlot
+                    });
+            }
+
+            todayAgendSummary.Total = appointments.Count;
+
+            todayAgendSummary.Confirmed =
+                appointments.Count(x =>
+                    x.AppointmentStatus == AppointmentStatus.Confirmado);
+
+            todayAgendSummary.Canceled =
+                appointments.Count(x =>
+                    x.AppointmentStatus == AppointmentStatus.Cancelado);
+
+            todayAgendSummary.Pending =
+                appointments.Count(x =>
+                    x.AppointmentStatus == AppointmentStatus.Agendado);
+        }
+        catch (ArgumentException ex)
+        {
+            ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Ocorreu um erro ao carregar os agendamentos.");
+        }
+    
+    }
+
+    private async Task OnSelectedDateChanged(DateTime date)
+    {
+        selectedDate = date;
+        await LoadAppointmentsAsync();
+    }
+
+    private async Task OpenScheduleDetails(AppointmentViewModel appointment)
+    {
+        var parameters = new DialogParameters { ["ClinicId"] = clinicId, ["DoctorId"] = appointment.DoctorId, ["DoctorName"] = appointment.DoctorName, ["AppointmentId"] = appointment.AppointmentId, ["IsScheduleBlock"] = false, ["ScheduleInteractionMode"] = userType.Equals("Doctor") ? AgendMode.ReadOnly : AgendMode.Full };
+
+        var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                CloseButton = true
+            };
+
+        var confirmed = await ShowDialogAsync<SaveScheduleDialog>(
+           "Detalhes do Agendamento",
+           parameters,
+           options);
+
+        if (confirmed)
+        {
+            await LoadAppointmentsAsync();
+        }
+    }
+
+    private string Capitalize(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        return char.ToUpper(text[0]) + text.Substring(1);
+    }
+
+    private class AppointmentViewModel
+    {
+        public int AppointmentId { get; set; }
+        public int DoctorId { get; set; }
+        public string DoctorName { get; set; }
+        public string PatientName { get; set; }
+        public string StartTime { get; set; }
+        public string EndTime { get; set; }
+        public string Status { get; set; }
+        public string AppointmentType { get; set; }
+        public string Color { get; set; }
+        public DateTime StartDateTime { get; set; }
+        public DateTime EndDateTime { get; set; }
+
+    }
+
+    private class AppointmentGroup
+    {
+        public string Time { get; set; }
+        public List<AppointmentViewModel> Appointments { get; set; } = new();
+    }
+
+}

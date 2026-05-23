@@ -1,0 +1,590 @@
+﻿@using AutoMapper
+@inherits DialogBase
+@inject IMapper _mapper
+@inject IAppointmentService AppointmentService
+@inject IScheduleBlockService ScheduleBlockService
+@inject IPatientService PatientService
+@inject IClinicService ClinicService
+@inject IJSRuntime JS
+
+<MudDialog>
+    <DialogContent>
+        <MudRadioGroup T="string" @bind-Value="_selectedScheduleType" Class="mb-4">
+            @if (_showAppointmentOption)
+            {
+                <MudRadio Dense="true" Value="@("Agendamento")">Atendimento</MudRadio>
+            }
+
+            @if (_showBlockOption)
+            {
+                <MudRadio Dense="true" Value="@("Bloqueio")">Bloqueio</MudRadio>
+            }
+        </MudRadioGroup>
+
+        @if (_selectedScheduleType == "Agendamento")
+        {
+            <EditForm Model="@appointment" OnValidSubmit="OnValidSubmitAppointment">
+                <DataAnnotationsValidator />
+                <MudGrid Class="mb-3">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Label="Médico"
+                                      Value="@appointment.DoctorName"
+                                      Disabled="true"
+                                      Variant="Variant.Outlined"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="5">
+                        <MudAutocomplete T="PatientLookupDTO"
+                                         @bind-Value="appointment.Patient"
+                                         SearchFunc="SearchPatients"
+                                         ToStringFunc="@(p => !string.IsNullOrEmpty(p?.FullName) ? p?.FullName + " (CPF: " + p?.CPF + ")" : string.Empty)"
+                                         Label="Paciente"
+                                         Variant="Variant.Outlined"
+                                         ResetValueOnEmptyText="true"
+                                         For="@(() => appointment.Patient)"
+                                         Required="true"
+                                         Adornment="Adornment.Start"
+                                         AdornmentIcon="@Icons.Material.Filled.Person"
+                                         Placeholder="Digite o nome do paciente..."
+                                         DebounceInterval="400"
+                                         ShowProgressIndicator="true"
+                                         ProgressIndicatorColor="Color.Default" />
+
+                    </MudItem>
+
+                    @if (ScheduleInteractionMode == AgendMode.Full)
+                    {
+                        <MudItem xs="12" sm="1" Class="mt-4">
+                            <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                           Color="Color.Primary"
+                                           Variant="Variant.Filled"
+                                           Size="Size.Small"
+                                           OnClick="OpenCadastroPacienteDialog"
+                                           Class="rounded-circle" />
+                        </MudItem>
+                    }
+
+                </MudGrid>
+
+                <MudGrid Class="mb-3">
+
+                    <MudItem xs="12" sm="3">
+                        <MudTextField Label="Data de Início"
+                                      @bind-Value="appointment.StartDate"
+                                      Variant="Variant.Outlined"
+                                      Mask="@(new PatternMask("00/00/0000"))"
+                                      Placeholder="dd/mm/aaaa"
+                                      Required="true"
+                                      For="@(() => appointment.StartDate)" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="3">
+                        <MudTextField Label="Hora de Início"
+                                      @bind-Value="appointment.StartTime"
+                                      Variant="Variant.Outlined"
+                                      Mask="@(new PatternMask("00:00"))"
+                                      Placeholder="HH:mm"
+                                      Required="true"
+                                      For="@(() => appointment.StartTime)" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="3">
+                        <MudTextField Label="Data de Término"
+                                      @bind-Value="appointment.EndDate"
+                                      Variant="Variant.Outlined"
+                                      Mask="@(new PatternMask("00/00/0000"))"
+                                      Placeholder="dd/mm/aaaa"
+                                      Required="true"
+                                      For="@(() => appointment.EndDate)" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="3">
+                        <MudTextField Label="Hora de Término"
+                                      @bind-Value="appointment.EndTime"
+                                      Variant="Variant.Outlined"
+                                      Mask="@(new PatternMask("00:00"))"
+                                      Placeholder="HH:mm"
+                                      Required="true"
+                                      For="@(() => appointment.EndTime)" />
+                    </MudItem>
+
+                </MudGrid>
+
+                <MudGrid Class="mb-3">
+
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AppointmentType"
+                                   Label="Tipo de Agendamento"
+                                   Required="true"
+                                   @bind-Value="appointment.AppointmentType"
+                                   Variant="Variant.Outlined">
+                            @foreach (var tipo in Enum.GetValues(typeof(AppointmentType)))
+                            {
+                                <MudSelectItem Value="@( (AppointmentType)tipo )">@tipo</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="BillingType"
+                                   Label="Convênio"
+                                   Required="true"
+                                   @bind-Value="appointment.BillingType"
+                                   Variant="Variant.Outlined">
+                            @foreach (var tipo in Enum.GetValues(typeof(BillingType)))
+                            {
+                                <MudSelectItem Value="@( (BillingType)tipo )">@tipo</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="4">
+                        <MudTextField T="string"
+                                      @bind-Value="appointment.HealthInsuranceName"
+                                      Label="Nome do Convênio"
+                                      Variant="Variant.Outlined"
+                                      MaxLength="100"
+                                      Placeholder="Nome do Convênio (opcional)" />
+                    </MudItem>
+
+                </MudGrid>
+
+                <MudGrid>
+
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AppointmentStatus"
+                                   Label="Status do agendamento"
+                                   Required="true"
+                                   @bind-Value="appointment.AppointmentStatus"
+                                   Variant="Variant.Outlined">
+                            @foreach (var status in Enum.GetValues(typeof(AppointmentStatus)))
+                            {
+                                <MudSelectItem Value="@( (AppointmentStatus)status )">@status</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AppointmentPresenceStatus"
+                                   Label="Status de Presença"
+                                   Required="true"
+                                   @bind-Value="appointment.AppointmentPresenceStatus"
+                                   Variant="Variant.Outlined">
+                            @foreach (var status in Enum.GetValues(typeof(AppointmentPresenceStatus)))
+                            {
+                                <MudSelectItem Value="@( (AppointmentPresenceStatus)status )">@status</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField T="string"
+                                      @bind-Value="appointment.Observations"
+                                      Label="Observações"
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      MaxLength="200"
+                                      Placeholder="Informações adicionais (opcional)" />
+                    </MudItem>
+
+                </MudGrid>
+
+                @if (ScheduleInteractionMode == AgendMode.Full)
+                {
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mt-6 mb-4">
+
+                        @if (AppointmentId.HasValue)
+                        {
+                             <MudStack Row="true" Spacing="4">
+                                <MudButton OnClick="ConfirmDelete" Color="Color.Error" Variant="Variant.Filled">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" />
+                                    Excluir
+                                </MudButton>
+
+                                @if (_canSendWhatsAppConfirmation)
+                                {
+                                    <MudButton StartIcon="@Icons.Custom.Brands.WhatsApp"
+                                               OnClick="SendWhatsAppConfirmation"
+                                               Variant="Variant.Filled"
+                                               Size="Size.Medium"
+                                               Style="background-color: #25D366; color: white;">
+                                        Confirmar agendamento via WhatsApp
+                                    </MudButton>
+                                }
+
+                             </MudStack>
+                        }
+                        else
+                        {
+                            <div></div>
+                        }
+
+                        <MudStack Row="true" Spacing="4">
+                            <MudButton OnClick="Cancel" Color="Color.Error" Variant="Variant.Filled">
+                                Cancelar
+                            </MudButton>
+
+                            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">
+                                Salvar
+                            </MudButton>
+                        </MudStack>
+
+                    </MudStack>
+                }
+
+            </EditForm>
+        }
+        else if (_selectedScheduleType == "Bloqueio")
+        {
+            <EditForm Model="@scheduleBlock" OnValidSubmit="OnValidSubmitScheduleBlock">
+                <DataAnnotationsValidator />
+                <MudGrid Class="mb-3">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Label="Médico"
+                                      Value="@scheduleBlock.DoctorName"
+                                      Disabled="true"
+                                      Variant="Variant.Outlined"
+                                      Class="mb-3" />
+                    </MudItem>
+                </MudGrid>
+
+            <MudGrid Class="mb-3">
+
+                <MudItem xs="12" sm="3">
+                    <MudTextField Label="Data de Início"
+                                  @bind-Value="scheduleBlock.StartDate"
+                                  Variant="Variant.Outlined"
+                                  Mask="@(new PatternMask("00/00/0000"))"
+                                  Placeholder="dd/mm/aaaa"
+                                      Required="true"
+                                  For="@(() => scheduleBlock.StartDate)" />
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudTextField Label="Hora de Início"
+                                  @bind-Value="scheduleBlock.StartTime"
+                                  Variant="Variant.Outlined"
+                                  Mask="@(new PatternMask("00:00"))"
+                                  Placeholder="HH:mm"
+                                      Required="true"
+                                  For="@(() => scheduleBlock.StartTime)" />
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudTextField Label="Data de Término"
+                                  @bind-Value="scheduleBlock.EndDate"
+                                  Variant="Variant.Outlined"
+                                  Mask="@(new PatternMask("00/00/0000"))"
+                                  Placeholder="dd/mm/aaaa"
+                                      Required="true"
+                                  For="@(() => scheduleBlock.EndDate)" />
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudTextField Label="Hora de Término"
+                                  @bind-Value="scheduleBlock.EndTime"
+                                  Variant="Variant.Outlined"
+                                  Mask="@(new PatternMask("00:00"))"
+                                  Placeholder="HH:mm"
+                                      Required="true"
+                                  For="@(() => scheduleBlock.EndTime)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField T="string"
+                                  @bind-Value="scheduleBlock.Description"
+                                  Label="Descrição"
+                                  Variant="Variant.Outlined"
+                                  Lines="3"
+                                  MaxLength="200"
+                                  Placeholder="Descrição do bloqueio (opcional)" />
+                </MudItem>
+
+            </MudGrid>
+
+                @if (ScheduleInteractionMode == AgendMode.Full)
+                {
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mt-6 mb-4">
+
+                        @if (AppointmentId.HasValue)
+                        {
+                            <MudButton OnClick="ConfirmDelete" Color="Color.Error" Variant="Variant.Filled">
+                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" />
+                                Excluir
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <div></div>
+                        }
+
+                        <MudStack Row="true" Spacing="4">
+                            <MudButton OnClick="Cancel" Color="Color.Error" Variant="Variant.Filled">
+                                Cancelar
+                            </MudButton>
+
+                            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">
+                                Salvar
+                            </MudButton>
+                        </MudStack>
+
+                    </MudStack>
+                }
+
+          </EditForm>
+        }
+
+       
+    </DialogContent>
+</MudDialog>
+
+
+@code {
+
+    [Parameter] public int DoctorId { get; set; }
+    [Parameter] public string DoctorName { get; set; } = string.Empty;
+    [Parameter] public int ClinicId { get; set; }
+    [Parameter] public AgendMode ScheduleInteractionMode { get; set; } = AgendMode.Full;
+
+    [Parameter] public DateTime? Start { get; set; }
+    [Parameter] public DateTime? End { get; set; }
+
+    [Parameter] public int? AppointmentId { get; set; }
+    [Parameter] public bool IsScheduleBlock { get; set; }
+
+    private string _selectedScheduleType = "Agendamento";
+    private bool _showAppointmentOption = true;
+    private bool _showBlockOption = true;
+
+    private bool _canSendWhatsAppConfirmation =>
+        appointment.AppointmentStatus == AppointmentStatus.Agendado &&
+        !string.IsNullOrWhiteSpace(appointment.StartDate) &&
+        !string.IsNullOrWhiteSpace(appointment.StartTime) &&
+        DateTimeConverter.ParseDateTime(appointment.StartDate, appointment.StartTime) > DateTime.Now;
+
+    private AppointmentDTO appointment = new();
+    private ScheduleBlockDTO scheduleBlock = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Start.HasValue && End.HasValue)
+        {
+            appointment.StartDate = DateTimeConverter.ToDateString(Start.Value);
+            appointment.StartTime = DateTimeConverter.ToTimeString(Start.Value);
+            appointment.EndDate = DateTimeConverter.ToDateString(End.Value);
+            appointment.EndTime = DateTimeConverter.ToTimeString(End.Value);
+
+            scheduleBlock.StartDate = DateTimeConverter.ToDateString(Start.Value);
+            scheduleBlock.StartTime = DateTimeConverter.ToTimeString(Start.Value);
+            scheduleBlock.EndDate = DateTimeConverter.ToDateString(End.Value);
+            scheduleBlock.EndTime = DateTimeConverter.ToTimeString(End.Value);
+        }
+
+        if (AppointmentId.HasValue)
+        {
+            if (IsScheduleBlock)
+            {
+                var scheduleBlockModel = await ScheduleBlockService.GetScheduleBlockById(AppointmentId.Value);
+                scheduleBlock = _mapper.Map<ScheduleBlockDTO>(scheduleBlockModel);
+                _showAppointmentOption = false;
+                _showBlockOption = true;
+                _selectedScheduleType = "Bloqueio";
+            }
+            else
+            {
+                var appointmentModel = await AppointmentService.GetAppointmentById(AppointmentId.Value);
+                appointment = _mapper.Map<AppointmentDTO>(appointmentModel);
+                _showAppointmentOption = true;
+                _showBlockOption = false;
+                _selectedScheduleType = "Agendamento";
+            }
+        }
+
+        appointment.DoctorId = DoctorId;
+        appointment.DoctorName = DoctorName;
+        appointment.ClinicId = ClinicId;
+
+        scheduleBlock.DoctorId = DoctorId;
+        scheduleBlock.DoctorName = DoctorName;
+        scheduleBlock.ClinicId = ClinicId;
+    }
+
+    private async Task<IEnumerable<PatientLookupDTO>> SearchPatients(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
+            return new List<PatientLookupDTO>();
+
+        return await PatientService.SearchByNameAsync(value, token);
+    }
+
+    private async Task OnValidSubmitAppointment(EditContext context)
+    {
+        await ExecuteAsync(async () =>
+        {
+            appointment.PatientId = appointment.Patient.PatientId;
+            var appointmentModel = _mapper.Map<Appointment>(appointment);
+            var result = await AppointmentService.SaveAppointmentAsync(appointmentModel);
+
+            if (!result.Success)
+            {
+                ShowError(result.Message);
+                return false;
+            }
+
+            CloseOk(appointment);
+            return true;
+        },
+        successMessage: "Atendimento salvo com sucesso!",
+        errorMessage: "Ocorreu um erro inesperado ao salvar o atendimento. Tente novamente mais tarde.");
+    }
+
+    private async Task OnValidSubmitScheduleBlock(EditContext context)
+    {
+        await ExecuteAsync(async () =>
+        {
+            var schedulBlockModel = _mapper.Map<ScheduleBlock>(scheduleBlock);
+            var result = await ScheduleBlockService.SaveScheduleBlockAsync(schedulBlockModel);
+
+            if (!result.Success)
+            {
+                ShowError(result.Message);
+                return false;
+            }
+
+            CloseOk(scheduleBlock);
+            return true;
+        },
+        successMessage: "Bloqueio salvo com sucesso!",
+        errorMessage: "Ocorreu um erro inesperado ao salvar o bloqueio. Tente novamente mais tarde.");
+    }
+
+    private async Task OpenCadastroPacienteDialog()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true
+        };
+
+        var parameters = new DialogParameters { ["ClinicId"] = appointment.ClinicId };
+
+        _ = await ShowDialogAsync<SavePatientDialog>(
+            "Novo Paciente",
+            parameters,
+            options);
+    }
+
+    private async Task ConfirmDelete()
+    {
+        var parameters = new DialogParameters
+            {
+                ["ContentText"] = "Deseja realmente excluir este agendamento?",
+                ["ButtonText"] = "Excluir"
+            };
+
+        var confirmed = await ShowDialogAsync<ConfirmActionDialog>(
+            "Confirmar exclusão",
+            parameters);
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            if (AppointmentId.HasValue)
+            {
+                if (IsScheduleBlock)
+                {
+                    var result = await ScheduleBlockService.DeleteScheduleBlockAsync(AppointmentId.Value);
+
+                    if (result.Success)
+                    {
+                        ShowSuccess("Bloqueio excluído com sucesso!");
+                        CloseOk();
+
+                    }
+                    else
+                        ShowError(result.Message);
+                }
+                else
+                {
+                    var result = await AppointmentService.DeleteAppointmentAsync(AppointmentId.Value);
+
+                    if (result.Success)
+                    {
+                        ShowSuccess("Atendimento excluído com sucesso!");
+                        CloseOk();
+                    }
+                    else
+                        ShowError(result.Message);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível excluir o agendamento. Tente novamente mais tarde.");
+        }
+    }
+
+    private async Task SendWhatsAppConfirmation()
+    {
+        try
+        {
+            var clinicSettings = await ClinicService.GetClinicSettingsByClinicIdAsync(ClinicId);
+            string message = string.Empty;
+
+            if (!string.IsNullOrEmpty(clinicSettings.WhatsAppAppointmentConfirmationMessage))
+            {
+                message = clinicSettings.WhatsAppAppointmentConfirmationMessage;
+            }
+            else
+            {
+                message = @"
+                Olá, {Paciente}!
+
+                Sua consulta com Dr(a). {Medico} está agendada para:
+
+                📅 Data: {Data}
+                🕒 Horário: {Hora}
+
+                Por gentileza, confirme sua presença respondendo esta mensagem.
+
+                Aguardamos você!";
+            }
+
+            message = message
+                             .Replace("{Paciente}", appointment.Patient.FullName)
+                             .Replace("{Medico}", appointment.DoctorName)
+                             .Replace("{Data}", appointment.StartDate)
+                             .Replace("{Hora}", appointment.StartTime);
+
+            if (clinicSettings.UseConfirmationLink && message.Contains("{LinkConfirmacao}"))
+            {
+                string confirmationLink = await AppointmentService.GenerateConfirmationLinkAsync(AppointmentId!.Value);
+                if (string.IsNullOrEmpty(confirmationLink))
+                    throw new Exception();
+
+                message = message
+                        .Replace("{LinkConfirmacao}", confirmationLink);
+            }
+
+            string phone = appointment.Patient.PhoneNumber;
+            phone = new string(phone.Where(char.IsDigit).ToArray());
+            if (!phone.StartsWith("55"))
+                phone = $"55{phone}";
+
+            string encodedMessage = Uri.EscapeDataString(message);
+
+            string url = $"https://wa.me/{phone}?text={encodedMessage}";
+
+            await JS.InvokeVoidAsync("open", url, "_blank");
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível gerar o link para o WhatsApp. Tente novamente mais tarde.");
+        }
+    }
+}

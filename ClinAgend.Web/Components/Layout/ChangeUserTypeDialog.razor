@@ -1,0 +1,65 @@
+﻿@inject IUserService UserService
+@inherits DialogBase
+
+<MudDialog>
+    <DialogContent>
+        <MudSelect T="UserType"
+                   @bind-Value="selectedType"
+                   Label="Tipo de Usuário"
+                   Variant="Variant.Outlined"
+                   Required="true"
+                   RequiredError="Selecione o tipo de usuário"
+                   FullWidth="true"
+                   Immediate="true">
+            <MudSelectItem Value="UserType.Default">Padrão</MudSelectItem>
+            <MudSelectItem Value="UserType.Master">Master</MudSelectItem>
+        </MudSelect>
+    </DialogContent>
+        <DialogActions>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Cancel">Cancelar</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ChangeType">Salvar</MudButton>
+        </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public string UserId { get; set; }
+
+    [Parameter]
+    public UserType UserType { get; set; }
+
+    private UserType selectedType;
+
+    protected override void OnInitialized()
+    {
+        selectedType = UserType;
+    }
+
+    private async Task ChangeType()
+    {
+        await ExecuteAsync(async () =>
+        {
+            if (selectedType == UserType)
+            {
+                ShowInfo("O tipo selecionado é o mesmo atual.");
+                Cancel();
+                return false;
+            }
+
+            var result = await UserService.UpdateUserTypeAsync(UserId, selectedType);
+
+            if (!result.Success)
+            {
+                ShowError(result.Message);
+                return false;
+            }
+
+            CloseOk(true);
+            return true;
+        },
+        successMessage: "Tipo de usuário atualizado com sucesso!",
+        errorMessage: "Ocorreu um erro inesperado ao salvar o tipo de usuário. Tente novamente mais tarde.");
+    }
+
+}

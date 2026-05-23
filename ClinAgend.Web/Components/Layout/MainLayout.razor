@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+
+<MudThemeProvider Theme="@ClinAgend.Web.Themes.CustomMudTheme.DefaultTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <AuthorizeView>
+        <Authorized>
+            <MudAppBar Elevation="2">
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Tertiary" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+                <MudSpacer />
+                <MudMenu>
+                    <ActivatorContent>
+                        <MudAvatar Color="Color.Primary">@(@context.User.FindFirst("FullName")?.Value.Substring(0, 1).ToUpper())</MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudMenuItem Label="Meus dados" Href="/meus-dados" Icon="@Icons.Material.Filled.Person" />
+
+                       <AuthorizeView Policy="MasterOnly">
+                            <Authorized Context="clinicUsersContext">
+                                <MudMenuItem Label="Usuários da Clínica" Href="/usuarios-clinica" Icon="@Icons.Material.Filled.Group" />
+                            </Authorized>
+                        </AuthorizeView>
+
+                        <MudMenuItem Label="Logout" Href="/logout" Icon="@Icons.Material.Filled.Logout" />
+                    </ChildContent>
+                </MudMenu>
+            </MudAppBar>
+
+            <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+                <NavMenu></NavMenu>
+            </MudDrawer>
+        </Authorized>
+    </AuthorizeView>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
+
+

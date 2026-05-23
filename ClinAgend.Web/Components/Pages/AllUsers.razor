@@ -1,0 +1,203 @@
+﻿@page "/usuarios-clinica"
+@inherits PageBase
+@attribute [Authorize(Policy = "MasterOnly")]
+@inject ICurrentUserService CurrentUserService
+@inject IUserService UserService
+
+<MudStack Class="mt-8 px-10" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+    <MudText Typo="Typo.h5">Usuários da Clínica</MudText>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenSaveUserDialog">
+        Novo Usuário
+    </MudButton>
+</MudStack>
+
+
+<MudDataGrid @ref="dataGrid"
+             T="UserDTO"
+             ServerData="LoadUsers"
+             Hover="true"
+             Class="pa-4 ma-8"
+             Filterable="false"
+             Loading="@loading">
+
+    <ToolBarContent>
+       <MudTextField T="string"
+                 ValueChanged="@(s => OnSearch(s))"
+                 Placeholder="Buscar por nome ou e-mail"
+                 Adornment="Adornment.Start"
+                 AdornmentIcon="@Icons.Material.Filled.Search"
+                 Style="max-width: 400px;"
+                 Class="my-2" />
+
+    </ToolBarContent>
+
+   <Columns>
+       <PropertyColumn Property="u => u.Name" Title="Nome" HeaderStyle="font-weight: bold;" />
+       <PropertyColumn Property="u => u.Email" Title="Email" HeaderStyle="font-weight: bold;" />
+       <PropertyColumn Property="u => u.Type.ToDisplayText()" Title="Tipo de Usuário" HeaderStyle="font-weight: bold;" />
+
+        <TemplateColumn Title="Alterar Tipo" HeaderStyle="font-weight: bold;">
+            <CellTemplate Context="User">
+                @if (User.Item.Type != UserType.Doctor)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Tertiary"
+                                   Size="Size.Medium"
+                                   @onclick="() => ChangeType(User.Item.Id, User.Item.Type)" />
+                }
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Excluir" HeaderStyle="font-weight: bold;">
+           <CellTemplate Context="User">
+               <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Size="Size.Medium"
+                               @onclick="() => ConfirmDelete(User.Item.Id)" />
+           </CellTemplate>
+        </TemplateColumn>
+   </Columns>
+
+    <PagerContent>
+        <MudDataGridPager Class="pt-4" T="UserDTO" />
+    </PagerContent>
+
+</MudDataGrid>
+
+
+@code {
+    private int? clinicId;
+
+    private MudDataGrid<UserDTO> dataGrid;
+    private bool loading;
+    private string? searchText;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            clinicId = await CurrentUserService.GetUserClinicIdAsync()
+                ?? throw new InvalidOperationException("Usuário sem clínica associada.");
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+
+    private async Task<GridData<UserDTO>> LoadUsers(GridState<UserDTO> state)
+    {
+        if (!clinicId.HasValue)
+            return GridDataExtensions.Empty<UserDTO>();
+
+        try
+        {
+            loading = true;
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+
+            var (users, total) = await UserService.GetUsersPaginatedAsync(
+                clinicId: clinicId.Value,
+                page: state.Page,
+                pageSize: state.PageSize,
+                search: searchText,
+                sortBy: sort?.SortBy,
+                descending: sort?.Descending ?? false);
+
+            return new GridData<UserDTO>
+                {
+                    Items = users.Select(u => new UserDTO(u.Id, u.Name, u.Email, u.Type)),
+                    TotalItems = total
+                };
+        }
+        catch (Exception ex)
+        {
+            ShowError("Erro ao carregar usuários.");
+            return GridDataExtensions.Empty<UserDTO>();
+        }
+        finally
+        {
+            loading = false;
+        }
+
+    }
+
+    private Task OnSearch(string text)
+    {
+        searchText = text;
+        return dataGrid.ReloadServerData();
+    }
+
+    private async Task OpenSaveUserDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "ClinicId", clinicId.Value }
+        };
+
+        var confirmed = await ShowDialogAsync<SaveUserDialog>(
+            "Novo Usuário",
+            parameters);
+
+        if (confirmed)
+        {
+            await dataGrid.ReloadServerData();
+        }
+    }
+
+
+    private async Task ConfirmDelete(string userId)
+    {
+        var parameters = new DialogParameters
+            {
+                ["ContentText"] = "Deseja realmente excluir este usuário?",
+                ["ButtonText"] = "Excluir"
+            };
+
+        var confirmed = await ShowDialogAsync<ConfirmActionDialog>(
+            "Confirmar exclusão",
+            parameters);
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            var result = await UserService.DeleteUserAsync(userId);
+
+            if (result.Success)
+            {
+                await dataGrid.ReloadServerData();
+                ShowSuccess("Usuário excluído com sucesso!");
+            }
+            else
+            {
+                ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível excluir o usuário. Tente novamente mais tarde.");
+        }
+    }
+
+
+    private async Task ChangeType(string userId, UserType type)
+    {
+        var parameters = new DialogParameters
+            {
+                { "UserId", userId },
+                { "UserType", type }
+            };
+
+        var confirmed = await ShowDialogAsync<ChangeUserTypeDialog>(
+            "Alterar Tipo",
+            parameters);
+
+        if (confirmed)
+        {
+            await dataGrid.ReloadServerData();
+        }
+    }
+
+}

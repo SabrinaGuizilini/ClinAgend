@@ -1,0 +1,9 @@
+﻿@page "/agenda/{DoctorId:int}"
+@attribute [Authorize(Policy = "DefaultAndMaster")]
+
+<DoctorCalendar DoctorId="DoctorId" AgendAccessMode="AgendMode.Full" />
+
+@code {
+    [Parameter]
+    public int DoctorId { get; set; }
+}
