@@ -38,7 +38,7 @@
                                   Label="CNPJ"
                                   Variant="Variant.Outlined"
                                   For="@(() => clinic.CNPJ)"
-                                  Immediate="true"
+                                  DebounceInterval="300"
                                   Required="true"
                                   Mask="@(new PatternMask("00.000.000/0000-00"))"
                                   Class="mb-3"/>
@@ -62,7 +62,7 @@
                                   Label="Telefone"
                                   Variant="Variant.Outlined"
                                   For="@(() => clinic.Phone)"
-                                  Immediate="true"
+                                  DebounceInterval="300"
                                   Class="mb-3"
                                   Mask="@(new PatternMask("(00)00000-0000"))"
                                   Placeholder="Ex: (11)99999-9999" />

@@ -73,6 +73,7 @@
                         <MudTextField Label="Data de Início"
                                       @bind-Value="appointment.StartDate"
                                       Variant="Variant.Outlined"
+                                      DebounceInterval="300"
                                       Mask="@(new PatternMask("00/00/0000"))"
                                       Placeholder="dd/mm/aaaa"
                                       Required="true"
@@ -83,6 +84,7 @@
                         <MudTextField Label="Hora de Início"
                                       @bind-Value="appointment.StartTime"
                                       Variant="Variant.Outlined"
+                                      DebounceInterval="300"
                                       Mask="@(new PatternMask("00:00"))"
                                       Placeholder="HH:mm"
                                       Required="true"
@@ -93,6 +95,7 @@
                         <MudTextField Label="Data de Término"
                                       @bind-Value="appointment.EndDate"
                                       Variant="Variant.Outlined"
+                                      DebounceInterval="300"
                                       Mask="@(new PatternMask("00/00/0000"))"
                                       Placeholder="dd/mm/aaaa"
                                       Required="true"
@@ -103,6 +106,7 @@
                         <MudTextField Label="Hora de Término"
                                       @bind-Value="appointment.EndTime"
                                       Variant="Variant.Outlined"
+                                      DebounceInterval="300"
                                       Mask="@(new PatternMask("00:00"))"
                                       Placeholder="HH:mm"
                                       Required="true"
@@ -255,9 +259,10 @@
                     <MudTextField Label="Data de Início"
                                   @bind-Value="scheduleBlock.StartDate"
                                   Variant="Variant.Outlined"
+                                  DebounceInterval="300"
                                   Mask="@(new PatternMask("00/00/0000"))"
                                   Placeholder="dd/mm/aaaa"
-                                      Required="true"
+                                  Required="true"
                                   For="@(() => scheduleBlock.StartDate)" />
                 </MudItem>
 
@@ -265,9 +270,10 @@
                     <MudTextField Label="Hora de Início"
                                   @bind-Value="scheduleBlock.StartTime"
                                   Variant="Variant.Outlined"
+                                  DebounceInterval="300"
                                   Mask="@(new PatternMask("00:00"))"
                                   Placeholder="HH:mm"
-                                      Required="true"
+                                  Required="true"
                                   For="@(() => scheduleBlock.StartTime)" />
                 </MudItem>
 
@@ -277,7 +283,8 @@
                                   Variant="Variant.Outlined"
                                   Mask="@(new PatternMask("00/00/0000"))"
                                   Placeholder="dd/mm/aaaa"
-                                      Required="true"
+                                  Required="true"
+                                  DebounceInterval="300"
                                   For="@(() => scheduleBlock.EndDate)" />
                 </MudItem>
 
@@ -287,7 +294,8 @@
                                   Variant="Variant.Outlined"
                                   Mask="@(new PatternMask("00:00"))"
                                   Placeholder="HH:mm"
-                                      Required="true"
+                                  Required="true"
+                                  DebounceInterval="300"
                                   For="@(() => scheduleBlock.EndTime)" />
                 </MudItem>
 

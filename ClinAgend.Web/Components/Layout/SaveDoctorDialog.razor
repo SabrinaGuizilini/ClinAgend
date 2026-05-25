@@ -39,7 +39,7 @@
                                   Label="CPF"
                                   Variant="Variant.Outlined"
                                   For="@(() => doctor.CPF)"
-                                  Immediate="true"
+                                  DebounceInterval="300"
                                   Class="mb-3"
                                   Required="true"
                                   Placeholder="Ex: 123.456.789-00"
@@ -53,7 +53,7 @@
                                   Label="Celular"
                                   Variant="Variant.Outlined"
                                   For="@(() => doctor.PhoneNumber)"
-                                  Immediate="true"
+                                  DebounceInterval="300"
                                   Class="mb-3"
                                   Required="true"
                                   Mask="@(new PatternMask("(00)00000-0000"))"
@@ -111,6 +111,7 @@
                                   @bind-Value="doctor.StartTime"
                                   Variant="Variant.Outlined"
                                   Required="true"
+                                  DebounceInterval="300"
                                   Mask="@(new PatternMask("00:00"))"
                                   Placeholder="HH:mm"
                                   For="@(() => doctor.StartTime)" />
@@ -121,6 +122,7 @@
                                   @bind-Value="doctor.EndTime"
                                   Variant="Variant.Outlined"
                                   Required="true"
+                                  DebounceInterval="300"
                                   Mask="@(new PatternMask("00:00"))"
                                   Placeholder="HH:mm"
                                   For="@(() => doctor.EndTime)" />
