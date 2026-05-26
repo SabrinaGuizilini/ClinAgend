@@ -137,14 +137,10 @@ using (var scope = app.Services.CreateScope())
 
         context.Database.Migrate();
 
-        Console.WriteLine("Migrations aplicadas com sucesso.");
-
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var configuration = services.GetRequiredService<IConfiguration>();
 
         await DbInitializer.SeedUsers(userManager, configuration);
-
-        Console.WriteLine("Seed executado com sucesso.");
     }
     catch (Exception ex)
     {
@@ -152,12 +148,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine(ex);
     }
 }
-
-Console.WriteLine("Timezone local: " + TimeZoneInfo.Local.DisplayName);
-Console.WriteLine("Timezone ID: " + TimeZoneInfo.Local.Id);
-Console.WriteLine("DateTime.Now: " + DateTime.Now);
-Console.WriteLine("DateTime.UtcNow: " + DateTime.UtcNow);
-
 
 if (!app.Environment.IsDevelopment())
 {

@@ -1,13 +1,9 @@
 ﻿using ClinAgend.Core.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mail;
-using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using ClinAgend.Models.Settings;
 using Microsoft.Extensions.Options;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace ClinAgend.Core.Services;
 
@@ -21,29 +17,32 @@ public class EmailService : IEmailService
         _settings = options.Value;
     }
 
-    public async Task SendAsync(
-        string to,
-        string subject,
-        string body)
+    public async Task SendAsync(string to, string subject, string body)
     {
-        using var smtp = new SmtpClient(
-            _settings.Host,
-            _settings.Port);
+        using var client = new HttpClient();
 
-        smtp.Credentials = new NetworkCredential(
-            _settings.Email,
-            _settings.Password);
+        var url = "https://api.brevo.com/v3/smtp/email";
 
-        smtp.EnableSsl = true;
+        client.DefaultRequestHeaders.Add("api-key", _settings.ApiKey);
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var mail = new MailMessage(
-            from: _settings.Email,
-            to,
-            subject,
-            body);
+        var payload = new
+        {
+            sender = new { email = _settings.Email, name = "ClinAgend" },
+            to = new[] { new { email = to } },
+            subject = subject,
+            htmlContent = body
+        };
 
-        mail.IsBodyHtml = true;
+        var json = JsonSerializer.Serialize(payload);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        await smtp.SendMailAsync(mail);
+        var response = await client.PostAsync(url, content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorDetail = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Erro na API do Brevo: {response.StatusCode} - {errorDetail}");
+        }
     }
 }
