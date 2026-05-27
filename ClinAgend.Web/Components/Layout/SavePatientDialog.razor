@@ -24,27 +24,21 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
-                    <MudTextField @bind-Value="patient.CPF"
-                                  Label="CPF"
-                                  Variant="Variant.Outlined"
-                                  For="@(() => patient.CPF)"
-                                  DebounceInterval="300"
-                                  Required="true"
-                                  Class="mb-3"
-                                  Placeholder="Ex: 123.456.789-00"
-                                  Mask="@(new PatternMask("000.000.000-00"))" />
+                    <MaskedTextField @bind-Value="patient.CPF"
+                                     Label="CPF"
+                                     Required="true"
+                                     Placeholder="Ex: 123.456.789-00"
+                                     MaskType="MaskType.CPF"
+                                     Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
-                    <MudTextField Label="Data de Nascimento"
-                                  @bind-Value="patient.BirthDate"
-                                  Variant="Variant.Outlined"
-                                  Placeholder="dd/mm/aaaa"
-                                  Mask="@(new PatternMask("00/00/0000"))"
-                                  DebounceInterval="300"
-                                  Required="true"
-                                  For="@(() => patient.BirthDate)"
-                                  Class="mb-3" />
+                    <MaskedTextField @bind-Value="patient.BirthDate"
+                                     Label="Data de Nascimento"
+                                     Required="true"
+                                     Placeholder="dd/mm/aaaa"
+                                     MaskType="MaskType.Date"
+                                     Class="mb-3" />
 
                 </MudItem>
             </MudGrid>
@@ -64,15 +58,12 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
-                    <MudTextField @bind-Value="patient.PhoneNumber"
-                                  Label="Celular"
-                                  Variant="Variant.Outlined"
-                                  For="@(() => patient.PhoneNumber)"
-                                  DebounceInterval="300"
-                                  Required="true"
-                                  Class="mb-3"
-                                  Mask="@(new PatternMask("(00)00000-0000"))"
-                                  Placeholder="Ex: (11)99999-9999" />
+                    <MaskedTextField @bind-Value="patient.PhoneNumber"
+                                     Label="Celular"
+                                     Required="true"
+                                     Placeholder="Ex: (11)99999-9999"
+                                     MaskType="MaskType.Phone"
+                                     Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12" sm="4">

@@ -70,47 +70,40 @@
                 <MudGrid Class="mb-3">
 
                     <MudItem xs="12" sm="3">
-                        <MudTextField Label="Data de Início"
-                                      @bind-Value="appointment.StartDate"
-                                      Variant="Variant.Outlined"
-                                      DebounceInterval="300"
-                                      Mask="@(new PatternMask("00/00/0000"))"
-                                      Placeholder="dd/mm/aaaa"
-                                      Required="true"
-                                      For="@(() => appointment.StartDate)" />
+                        <MaskedTextField @bind-Value="appointment.StartDate"
+                                         Label="Data de Início"
+                                         Required="true"
+                                         Placeholder="dd/mm/aaaa"
+                                         MaskType="MaskType.Date"
+                                         Class="mb-3" />
                     </MudItem>
 
                     <MudItem xs="12" sm="3">
-                        <MudTextField Label="Hora de Início"
-                                      @bind-Value="appointment.StartTime"
-                                      Variant="Variant.Outlined"
-                                      DebounceInterval="300"
-                                      Mask="@(new PatternMask("00:00"))"
-                                      Placeholder="HH:mm"
-                                      Required="true"
-                                      For="@(() => appointment.StartTime)" />
+
+                        <MaskedTextField @bind-Value="appointment.StartTime"
+                                         Label="Hora de Início"
+                                         Required="true"
+                                         Placeholder="HH:mm"
+                                         MaskType="MaskType.Time"
+                                         Class="mb-3" />
                     </MudItem>
 
                     <MudItem xs="12" sm="3">
-                        <MudTextField Label="Data de Término"
-                                      @bind-Value="appointment.EndDate"
-                                      Variant="Variant.Outlined"
-                                      DebounceInterval="300"
-                                      Mask="@(new PatternMask("00/00/0000"))"
-                                      Placeholder="dd/mm/aaaa"
-                                      Required="true"
-                                      For="@(() => appointment.EndDate)" />
+                        <MaskedTextField @bind-Value="appointment.EndDate"
+                                         Label="Data de Término"
+                                         Required="true"
+                                         Placeholder="dd/mm/aaaa"
+                                         MaskType="MaskType.Date"
+                                         Class="mb-3" />
                     </MudItem>
 
                     <MudItem xs="12" sm="3">
-                        <MudTextField Label="Hora de Término"
-                                      @bind-Value="appointment.EndTime"
-                                      Variant="Variant.Outlined"
-                                      DebounceInterval="300"
-                                      Mask="@(new PatternMask("00:00"))"
-                                      Placeholder="HH:mm"
-                                      Required="true"
-                                      For="@(() => appointment.EndTime)" />
+                        <MaskedTextField @bind-Value="appointment.EndTime"
+                                         Label="Hora de Término"
+                                         Required="true"
+                                         Placeholder="HH:mm"
+                                         MaskType="MaskType.Time"
+                                         Class="mb-3" />
                     </MudItem>
 
                 </MudGrid>
@@ -256,47 +249,39 @@
             <MudGrid Class="mb-3">
 
                 <MudItem xs="12" sm="3">
-                    <MudTextField Label="Data de Início"
-                                  @bind-Value="scheduleBlock.StartDate"
-                                  Variant="Variant.Outlined"
-                                  DebounceInterval="300"
-                                  Mask="@(new PatternMask("00/00/0000"))"
-                                  Placeholder="dd/mm/aaaa"
-                                  Required="true"
-                                  For="@(() => scheduleBlock.StartDate)" />
+                        <MaskedTextField @bind-Value="scheduleBlock.StartDate"
+                                         Label="Data de Início"
+                                         Required="true"
+                                         Placeholder="dd/mm/aaaa"
+                                         MaskType="MaskType.Date"
+                                         Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudTextField Label="Hora de Início"
-                                  @bind-Value="scheduleBlock.StartTime"
-                                  Variant="Variant.Outlined"
-                                  DebounceInterval="300"
-                                  Mask="@(new PatternMask("00:00"))"
-                                  Placeholder="HH:mm"
-                                  Required="true"
-                                  For="@(() => scheduleBlock.StartTime)" />
+                        <MaskedTextField @bind-Value="scheduleBlock.StartTime"
+                                         Label="Hora de Início"
+                                         Required="true"
+                                         Placeholder="HH:mm"
+                                         MaskType="MaskType.Time"
+                                         Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudTextField Label="Data de Término"
-                                  @bind-Value="scheduleBlock.EndDate"
-                                  Variant="Variant.Outlined"
-                                  Mask="@(new PatternMask("00/00/0000"))"
-                                  Placeholder="dd/mm/aaaa"
-                                  Required="true"
-                                  DebounceInterval="300"
-                                  For="@(() => scheduleBlock.EndDate)" />
+                        <MaskedTextField @bind-Value="scheduleBlock.EndDate"
+                                         Label="Data de Término"
+                                         Required="true"
+                                         Placeholder="dd/mm/aaaa"
+                                         MaskType="MaskType.Date"
+                                         Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudTextField Label="Hora de Término"
-                                  @bind-Value="scheduleBlock.EndTime"
-                                  Variant="Variant.Outlined"
-                                  Mask="@(new PatternMask("00:00"))"
-                                  Placeholder="HH:mm"
-                                  Required="true"
-                                  DebounceInterval="300"
-                                  For="@(() => scheduleBlock.EndTime)" />
+                        <MaskedTextField @bind-Value="scheduleBlock.EndTime"
+                                         Label="Hora de Término"
+                                         Required="true"
+                                         Placeholder="HH:mm"
+                                         MaskType="MaskType.Time"
+                                         Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12">

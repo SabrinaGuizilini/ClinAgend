@@ -35,29 +35,23 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
-                    <MudTextField @bind-Value="doctor.CPF"
-                                  Label="CPF"
-                                  Variant="Variant.Outlined"
-                                  For="@(() => doctor.CPF)"
-                                  DebounceInterval="300"
-                                  Class="mb-3"
-                                  Required="true"
-                                  Placeholder="Ex: 123.456.789-00"
-                                  Mask="@(new PatternMask("000.000.000-00"))" />
+                    <MaskedTextField @bind-Value="doctor.CPF"
+                                     Label="CPF"
+                                     Required="true"
+                                     Placeholder="Ex: 123.456.789-00"
+                                     MaskType="MaskType.CPF"
+                                     Class="mb-3" />
                 </MudItem>
             </MudGrid>
 
              <MudGrid>
                 <MudItem xs="12" sm="4">
-                    <MudTextField @bind-Value="doctor.PhoneNumber"
-                                  Label="Celular"
-                                  Variant="Variant.Outlined"
-                                  For="@(() => doctor.PhoneNumber)"
-                                  DebounceInterval="300"
-                                  Class="mb-3"
-                                  Required="true"
-                                  Mask="@(new PatternMask("(00)00000-0000"))"
-                                  Placeholder="Ex: (11)99999-9999" />
+                    <MaskedTextField @bind-Value="doctor.PhoneNumber"
+                                     Label="Celular"
+                                     Required="true"
+                                     Placeholder="Ex: (11)99999-9999"
+                                     MaskType="MaskType.Phone"
+                                     Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
@@ -107,25 +101,21 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudTextField Label="Início"
-                                  @bind-Value="doctor.StartTime"
-                                  Variant="Variant.Outlined"
-                                  Required="true"
-                                  DebounceInterval="300"
-                                  Mask="@(new PatternMask("00:00"))"
-                                  Placeholder="HH:mm"
-                                  For="@(() => doctor.StartTime)" />
+                    <MaskedTextField @bind-Value="doctor.StartTime"
+                                     Label="Início"
+                                     Required="true"
+                                     Placeholder="HH:mm"
+                                     MaskType="MaskType.Time"
+                                     Class="mb-3" />
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudTextField Label="Término"
-                                  @bind-Value="doctor.EndTime"
-                                  Variant="Variant.Outlined"
-                                  Required="true"
-                                  DebounceInterval="300"
-                                  Mask="@(new PatternMask("00:00"))"
-                                  Placeholder="HH:mm"
-                                  For="@(() => doctor.EndTime)" />
+                    <MaskedTextField @bind-Value="doctor.EndTime"
+                                     Label="Término"
+                                     Required="true"
+                                     Placeholder="HH:mm"
+                                     MaskType="MaskType.Time"
+                                     Class="mb-3" />
                 </MudItem>
             </MudGrid>
 

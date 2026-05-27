@@ -34,13 +34,11 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
-                    <MudTextField @bind-Value="clinic.CNPJ"
-                                  Label="CNPJ"
-                                  Variant="Variant.Outlined"
-                                  For="@(() => clinic.CNPJ)"
-                                  Required="true"
-                                  Mask="@(new PatternMask("00.000.000/0000-00"))"
-                                  Class="mb-3"/>
+                    <MaskedTextField @bind-Value="clinic.CNPJ"
+                                     Label="CNPJ"
+                                     Required="true"
+                                     MaskType="MaskType.CNPJ"
+                                     Class="mb-3" />
                 </MudItem>
              </MudGrid>
 
@@ -57,13 +55,11 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
-                    <MudTextField @bind-Value="clinic.Phone"
-                                  Label="Telefone"
-                                  Variant="Variant.Outlined"
-                                  For="@(() => clinic.Phone)"
-                                  Class="mb-3"
-                                  Mask="@(new PatternMask("(00)00000-0000"))"
-                                  Placeholder="Ex: (11)99999-9999" />
+                    <MaskedTextField @bind-Value="clinic.Phone"
+                                     Label="Telefone"
+                                     MaskType="MaskType.Phone"
+                                     Placeholder="Ex: (11)99999-9999"
+                                     Class="mb-3" />
                 </MudItem>
              </MudGrid>
 

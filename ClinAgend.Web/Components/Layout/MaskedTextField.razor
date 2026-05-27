@@ -1,0 +1,68 @@
+﻿@using ClinAgend.Web.Shared.Enums
+@using Microsoft.JSInterop
+@using System.Linq.Expressions
+
+@inject IJSRuntime JS
+
+<MudTextField T="string"
+              InputId="@_inputId"
+              Value="Value"
+              ValueChanged="ValueChanged"
+              ValueExpression="ValueExpression"
+              For="ValueExpression"
+              Label="@Label"
+              Variant="@Variant"
+              Placeholder="@Placeholder"
+              Required="@Required"
+              Immediate="false"
+              DebounceInterval="300"
+              Class="@Class"
+              MaxLength="@MaxLength" />
+@code {
+
+    private string _inputId =
+        "imask-" + Guid.NewGuid().ToString("N");
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public Expression<Func<string?>>? ValueExpression { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    [Parameter]
+    public bool Required { get; set; }
+
+    [Parameter]
+    public int MaxLength { get; set; } = 524288;
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public Variant Variant { get; set; }
+        = Variant.Outlined;
+
+    [Parameter]
+    public MaskType MaskType { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender &&
+            MaskType != MaskType.None)
+        {
+            await JS.InvokeVoidAsync(
+                "maskFunctions.apply",
+                _inputId,
+                MaskType.ToString());
+        }
+    }
+}
