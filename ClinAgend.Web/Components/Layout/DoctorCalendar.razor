@@ -167,17 +167,21 @@
     </MudExpansionPanel>
 </MudExpansionPanels>
 
-<MudStack Class="px-6 py-3">
-    <MudCalendar T="AppointmentCalendarItem" Culture="@CultureInfo.GetCultureInfo("pt-BR")" Items="appointments" CellRangeSelected="CellRangeSelected" ItemClicked="ItemClicked" MonthCellMinHeight="115" DayTimeInterval="_interval" DateRangeChanged="DateRangeChanged" IsDateTimeDisabledFunc="IsDateDisabled" AdditionalDateTimeClassesFunc="AdditionalDateTimeClasses">
-        <CellTemplate>
-            <div class="mud-cal-cell-template">
-                <MudChip T="string" Label="true" Style="@($"background-color: {context.Color}")" Class="mud-cal-cell-template-chip">@context.Text</MudChip>
+@if (isDoctorSettingsLoaded)
+{
+    <MudStack Class="px-6 py-3">
+        <MudCalendar T="AppointmentCalendarItem" Culture="@CultureInfo.GetCultureInfo("pt-BR")" Items="appointments" CellRangeSelected="CellRangeSelected" ItemClicked="ItemClicked" MonthCellMinHeight="115" DayTimeInterval="_interval" DateRangeChanged="DateRangeChanged" IsDateTimeDisabledFunc="IsDateDisabled" AdditionalDateTimeClassesFunc="AdditionalDateTimeClasses">
+            <CellTemplate>
+                <div class="mud-cal-cell-template">
+                    <MudChip T="string" Label="true" Style="@($"background-color: {context.Color}")" Class="mud-cal-cell-template-chip">@context.Text</MudChip>
                 </div>
             </CellTemplate>
         </MudCalendar>
-</MudStack>
+    </MudStack>
+}
 
-    @code {
+
+@code {
     [Parameter]
     public int DoctorId { get; set; }
 
@@ -190,6 +194,7 @@
     private TimeSpan doctorStartTime;
     private TimeSpan doctorEndTime;
     private int? doctorBreakBetweenAppointments;
+    private bool isDoctorSettingsLoaded;
 
     private List<DayOfWeek> _workingDays = new();
     private CalendarFilters filter = new();
@@ -203,6 +208,8 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        isDoctorSettingsLoaded = false;
+
         if (DoctorId <= 0)
             return;
 
@@ -224,6 +231,8 @@
                     .Where(day => day.HasValue)
                     .Select(day => day.Value)
                     .ToList();
+
+                isDoctorSettingsLoaded = true;
             }
             else
             {
@@ -439,7 +448,7 @@
         if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
             return new List<PatientLookupDTO>();
 
-        return await PatientService.SearchByNameAsync(value, token);
+        return await PatientService.SearchByNameAsync(clinicId.Value, value, token);
     }
 
     private async Task ReloadWithFilters()

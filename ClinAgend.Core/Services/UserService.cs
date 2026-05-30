@@ -39,8 +39,8 @@ namespace ClinAgend.Core.Services
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(u =>
-                    u.Name.Contains(search) ||
-                    u.Email!.Contains(search));
+                    EF.Functions.ILike(u.Name, $"%{search}%") ||
+                    EF.Functions.ILike(u.Email!, $"%{search}%"));
             }
 
             var total = await query.CountAsync();

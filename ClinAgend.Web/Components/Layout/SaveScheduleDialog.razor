@@ -409,7 +409,7 @@
         if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
             return new List<PatientLookupDTO>();
 
-        return await PatientService.SearchByNameAsync(value, token);
+        return await PatientService.SearchByNameAsync(ClinicId, value, token);
     }
 
     private async Task OnValidSubmitAppointment(EditContext context)

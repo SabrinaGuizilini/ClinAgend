@@ -11,7 +11,7 @@ namespace ClinAgend.Core.Interfaces
            int clinicId, int page, int pageSize, EntityStatusFilter statusFilter = EntityStatusFilter.Active, string? search = null, string? sortBy = null, bool descending = false);
         Task<OperationResult> SaveDoctorAsync(Doctor doctor);
         Task<OperationResult> DeleteDoctorAsync(int doctorId);
-        Task<IEnumerable<DoctorLookupDTO>> SearchByNameAsync(string? name, CancellationToken cancellationToken = default);
+        Task<IEnumerable<DoctorLookupDTO>> SearchByNameAsync(int clinicId, string? name, CancellationToken cancellationToken = default);
         Task LinkUserAsync(int doctorId, string? userId);
         Task<Doctor?> GetDoctorByUserId(string userId);
     }

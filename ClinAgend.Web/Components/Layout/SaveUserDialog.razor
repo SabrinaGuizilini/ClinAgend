@@ -124,7 +124,7 @@
         if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
             return new List<DoctorLookupDTO>();
 
-        return await DoctorService.SearchByNameAsync(value, token);
+        return await DoctorService.SearchByNameAsync(ClinicId, value, token);
     }
 
     private class UserCreateViewModel

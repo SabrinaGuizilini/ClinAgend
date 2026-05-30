@@ -11,7 +11,7 @@ namespace ClinAgend.Core.Interfaces
         Task<(List<Patient> Patients, int TotalCount)> GetPaginatedAsync(
             int clinicId, int page, int pageSize, EntityStatusFilter statusFilter = EntityStatusFilter.Active, string? search = null, string? sortBy = null, bool descending = false);
         Task<OperationResult> DeletePatientAsync(int patientId);
-        Task<IEnumerable<PatientLookupDTO>> SearchByNameAsync(string? name, CancellationToken cancellationToken = default);
+        Task<IEnumerable<PatientLookupDTO>> SearchByNameAsync(int clinicId, string? name, CancellationToken cancellationToken = default);
     }
 }
 

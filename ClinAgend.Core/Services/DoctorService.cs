@@ -40,9 +40,9 @@ namespace ClinAgend.Core.Services
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(p =>
-                    p.FullName.Contains(search) ||
-                    p.CRM.Contains(search) ||
-                    p.Specialty.Contains(search));
+                    EF.Functions.ILike(p.FullName, $"%{search}%") ||
+                    EF.Functions.ILike(p.CRM, $"%{search}%") ||
+                    EF.Functions.ILike(p.Specialty, $"%{search}%"));
             }
 
             var total = await query.CountAsync();
@@ -158,13 +158,13 @@ namespace ClinAgend.Core.Services
             }
         }
 
-        public async Task<IEnumerable<DoctorLookupDTO>> SearchByNameAsync(string? name, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<DoctorLookupDTO>> SearchByNameAsync(int clinicId, string? name, CancellationToken cancellationToken = default)
         {
             name = name?.Trim();
 
             var query = _doctorRepository.Query()
                 .AsNoTracking()
-                .Where(d => d.IsActive && d.UserId == null);
+                .Where(d => d.IsActive && d.UserId == null && d.ClinicId == clinicId);
 
             if (!string.IsNullOrWhiteSpace(name))
             {

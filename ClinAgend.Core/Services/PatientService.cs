@@ -40,9 +40,9 @@ namespace ClinAgend.Core.Services
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(p =>
-                    p.FullName.Contains(search) ||
-                    p.CPF.Contains(search) ||
-                    p.PhoneNumber.Contains(search));
+                    EF.Functions.ILike(p.FullName, $"%{search}%") ||
+                    EF.Functions.ILike(p.CPF, $"%{search}%") ||
+                    EF.Functions.ILike(p.PhoneNumber, $"%{search}%"));
             }
 
             var total = await query.CountAsync();
@@ -140,13 +140,13 @@ namespace ClinAgend.Core.Services
             }
         }
 
-        public async Task<IEnumerable<PatientLookupDTO>> SearchByNameAsync(string? name, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<PatientLookupDTO>> SearchByNameAsync(int clinicId, string? name, CancellationToken cancellationToken = default)
         {
             name = name?.Trim();
 
             var query = _patientRepository.Query()
                 .AsNoTracking()
-                .Where(d => d.IsActive);
+                .Where(d => d.IsActive && d.ClinicId == clinicId);
 
             if (!string.IsNullOrWhiteSpace(name))
             {
